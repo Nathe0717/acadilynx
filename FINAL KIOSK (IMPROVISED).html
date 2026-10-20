@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acadilynx Kiosk</title>
+<style>
+  :root {
+    --registrar-color: #14305E;
+    --cashier-color: #C9A227;
+    --gold-deep: #9A7410;
+    --gold-light: #E8C766;
+    --navy-900: #0A1F3F;
+    --navy-800: #0B2547;
+    --navy-700: #14305E;
+    --cream: #F6F2EA;
+    --cream-dark: #EAE4D6;
+    --line: #D9D2C0;
+    --text-dark: #0A1F3F;
+    --text-muted: #5F6E86;
+    --tag-bg: #EAE4D6;
+    --card-bg: #F6F2EA;
+    --circle-light: #1D4380;
+    --circle-dark: #14305E;
+  }
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(201,162,39,0.22), transparent 70%), var(--navy-800);
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    position: relative;
+  }
+  .circle {
+    position: absolute;
+    border-radius: 50%;
+    z-index: 0;
+  }
+  .circle.light { background: var(--circle-light); }
+  .circle.dark  { background: var(--circle-dark); }
+  .circle-tl-light  { width: 220px; height: 220px; top: -60px;  left: -60px; }
+  .circle-tl-dark   { width: 200px; height: 200px; top: 130px;  left: -100px; }
+  .circle-tr-light  { width: 240px; height: 240px; top: 90px;   right: -100px; }
+  .circle-br-dark   { width: 260px; height: 260px; bottom: -80px; right: 150px; }
+  .circle-br-light  { width: 130px; height: 130px; bottom: -30px; right: -30px; }
+  .kiosk-container {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+  }
+  h1 {
+    font-size: clamp(32px, 5vw, 56px);
+    font-weight: 800;
+    color: #FFFFFF;
+    margin-bottom: 16px;
+  }
+  .subtitle {
+    font-size: 18px;
+    color: #C3CFE2;
+    margin-bottom: 48px;
+  }
+  .cards {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .service-card {
+    background: var(--card-bg);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    width: 320px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 24px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .service-card:hover,
+  .service-card:focus-visible {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 36px rgba(0,0,0,0.4);
+    outline: none;
+  }
+  .card-top-bar {
+    width: 100%;
+    height: 10px;
+  }
+  .registrar .card-top-bar {
+    background: linear-gradient(90deg, #0A1F3F, #2F5F9E);
+  }
+  .cashier .card-top-bar {
+    background: linear-gradient(90deg, #9A7410, #E0B93A);
+  }
+  .icon-wrap {
+    margin-top: 32px;
+    margin-bottom: 20px;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 20px;
+  }
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 24px;
+    margin-bottom: 8px;
+  }
+  .tag {
+    background: var(--tag-bg);
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  .select-link {
+    margin-top: 20px;
+    margin-bottom: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .registrar .select-link { color: var(--registrar-color); }
+  .cashier .select-link { color: var(--gold-deep); }
+  .est-time {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+  }
+  .chatbot-support {
+    position: fixed;
+    bottom: 32px;
+    left: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 2;
+  }
+  .chatbot-icon-box {
+    width: 76px;
+    height: 76px;
+    border-radius: 16px;
+    background: var(--cashier-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chatbot-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold-light);
+    letter-spacing: 0.5px;
+  }
+  .nav-pill {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--navy-700);
+    border: 1px solid rgba(201,162,39,0.55);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    z-index: 2;
+  }
+  .nav-pill button {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: #FFFFFF;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav-pill button:hover {
+    background: rgba(255,255,255,0.15);
+  }
+  .nav-pill .divider {
+    width: 1px;
+    height: 20px;
+    background: rgba(255,255,255,0.3);
+  }
+  @media (max-width: 480px) {
+    .cards { gap: 20px; }
+    .service-card { width: 90vw; max-width: 340px; }
+    .chatbot-support { left: 16px; bottom: 16px; }
+  }
+  .screen {
+    display: none;
+    height: 100%;
+  }
+  .screen.active {
+    display: flex;
+  }
+  .reg-screen {
+    position: relative;
+    z-index: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .reg-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.4);
+    padding: 40px;
+    width: 100%;
+    max-width: 650px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .reg-card h2 {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text-dark);
+    text-align: center;
+    margin: 0;
+    border-bottom: 2px solid var(--cashier-color);
+    padding-bottom: 16px;
+  }
+  .reg-card form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .reg-subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin-top: -12px;
+    text-align: center;
+  }
+  .reg-label {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text-dark);
+  }
+  .reg-doc-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .reg-doc-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #BDB4A0;
+    border-radius: 15px;
+    padding: 14px 20px;
+    box-shadow: 0 4px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    background: #ffffff;
+    transition: border-color 0.15s ease;
+  }
+  .reg-doc-row:hover {
+    border-color: var(--cashier-color);
+  }
+  .reg-doc-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--registrar-color);
+    cursor: pointer;
+  }
+  .reg-doc-row span {
+    font-size: 14px;
+    color: #000000;
+  }
+  .reg-submit-btn {
+    background: var(--navy-900);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+  .reg-submit-btn:hover {
+    filter: brightness(0.95);
+  }
+  .txn-details-box {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .txn-details-box p {
+    font-size: 16px;
+    color: var(--text-dark);
+    margin: 0;
+  }
+  .txn-details-box p span {
+    color: var(--text-dark);
+  }
+  .txn-details-box p strong {
+    font-weight: 700;
+  }
+  .txn-action-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .txn-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 2px solid var(--navy-900);
+  }
+  .txn-btn.txn-edit {
+    background: #ffffff;
+    color: var(--text-dark);
+  }
+  .txn-btn.txn-edit:hover {
+    background: var(--cream-dark);
+  }
+  .txn-btn.txn-confirm {
+    background: var(--cashier-color);
+    color: var(--navy-900);
+    border-color: var(--gold-deep);
+  }
+  .txn-btn.txn-confirm:hover {
+    filter: brightness(0.95);
+  }
+  .txn-btn.txn-cancel {
+    background: #d73939;
+    color: #ffffff;
+    border-color: #b91c1c;
+  }
+  .txn-btn.txn-cancel:hover {
+    filter: brightness(0.95);
+  }
+  .reg-back-btn {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: 700;
+    color: #FFFFFF;
+    z-index: 2;
+  }
+  @media (max-width: 480px) {
+    .reg-card { padding: 18px; }
+    .reg-back-btn { right: 16px; bottom: 16px; }
+  }
+  :root {
+    --pop-bg: #EAE4D6;
+    --pop-card-bg: #F6F2EA;
+    --pop-border: #0A1F3F;
+    --pop-green: #C9A227;
+    --pop-red: #d73939;
+    --pop-input-bg: #E4DECF;
+    --pop-verified-green: #14305E;
+    --pop-text: #0A1F3F;
+    --pop-muted: #5F6E86;
+  }
+  .pop-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,15,35,0.65);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .pop-overlay.active { display: flex; }
+  .pop-card {
+    background: var(--pop-card-bg);
+    border: 1px solid var(--pop-border);
+    border-radius: 12px;
+    width: 407px;
+    max-width: 90vw;
+    padding: 30px 32px 28px;
+    text-align: center;
+    position: relative;
+    animation: popIn 0.15s ease-out;
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+  @keyframes popIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .pop-card h2 {
+    margin: 0 0 6px;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+    color: var(--pop-text);
+  }
+  .pop-card p.pop-subtitle {
+    margin: 0 0 26px;
+    color: var(--pop-muted);
+    font-size: 13px;
+  }
+  .pop-choice-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+  }
+  .pop-choice-btn {
+    padding: 10px 24px;
+    border: 1px solid var(--pop-border);
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+    color: var(--pop-text);
+  }
+  .pop-choice-btn.pop-yes { background: var(--pop-green); }
+  .pop-choice-btn.pop-yes:hover { filter: brightness(0.93); }
+  .pop-choice-btn.pop-no { background: var(--pop-red); color: #ffffff; }
+  .pop-choice-btn.pop-no:hover { filter: brightness(0.93); }
+  .pop-close-x {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--pop-text);
+  }
+  .pop-card.pop-student-number {
+    width: 402px;
+    background: var(--pop-input-bg);
+    border-radius: 5px;
+    padding: 20px 24px 18px;
+  }
+  .pop-student-number label {
+    display: block;
+    font-size: 16px;
+    text-decoration: underline;
+    margin-bottom: 10px;
+    color: var(--pop-text);
+    text-align: left;
+  }
+  .pop-student-number input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--pop-border);
+    border-radius: 5px;
+    font-size: 16px;
+    font-family: inherit;
+    background: #ffffff;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+  }
+  .pop-action-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  .pop-action-btn {
+    padding: 8px 22px;
+    border: 1px solid var(--pop-border);
+    border-radius: 12px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .pop-action-btn.pop-confirm { background: var(--pop-green); color: var(--pop-text); }
+  .pop-action-btn.pop-confirm:hover { filter: brightness(0.93); }
+  .pop-action-btn.pop-cancel { background: var(--pop-red); color: #ffffff; }
+  .pop-action-btn.pop-cancel:hover { filter: brightness(0.93); }
+  .pop-card.pop-student-details {
+    width: 520px;
+    text-align: left;
+    padding: 30px 34px 26px;
+  }
+  .pop-student-details h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 24px;
+  }
+  .pop-form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pop-form-fields label {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: block;
+  }
+  .pop-form-fields input,
+  .pop-form-fields select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--pop-border);
+    border-radius: 5px;
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--pop-input-bg);
+    box-sizing: border-box;
+  }
+  .pop-details-action-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .pop-details-btn {
+    padding: 10px 24px;
+    border: 1px solid var(--pop-border);
+    border-radius: 12px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .pop-details-btn.pop-confirm { background: var(--pop-green); color: var(--pop-text); }
+  .pop-details-btn.pop-confirm:hover { filter: brightness(0.93); }
+  .pop-details-btn.pop-cancel { background: var(--pop-red); color: #ffffff; }
+  .pop-details-btn.pop-cancel:hover { filter: brightness(0.93); }
+  .pop-card.pop-registration-info {
+    width: 520px;
+    text-align: left;
+    padding: 30px 34px 26px;
+  }
+  .pop-registration-info h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .pop-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .pop-form-group label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+  .pop-form-group input {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #CFC8B8;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #ffffff;
+    box-sizing: border-box;
+  }
+  .pop-form-group select {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid #CFC8B8;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #ffffff;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+  .pop-form-group select:focus {
+    outline: none;
+    border-color: var(--cashier-color);
+  }
+  .pop-form-group input:focus {
+    outline: none;
+    border-color: var(--cashier-color);
+    background: #ffffff;
+  }
+  .pop-form-row {
+    display: flex;
+    gap: 14px;
+  }
+  .pop-form-row .pop-form-group {
+    flex: 1;
+    min-width: 0;
+  }
+  .pop-card.pop-verified {
+    background: var(--pop-verified-green);
+    border-color: var(--cashier-color);
+    border-radius: 12px;
+    width: 496px;
+    padding: 24px 32px;
+  }
+  .pop-verified h2 {
+    color: #ffffff;
+    font-size: 26px;
+    text-shadow: 0px 2px 4px rgba(0,0,0,0.35);
+    margin-bottom: 6px;
+  }
+  .pop-verified a.pop-continue-link {
+    color: var(--gold-light);
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: underline;
+    cursor: pointer;
+    display: inline-block;
+    margin-top: 6px;
+  }
+  .pay-columns {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .pay-col {
+    background: var(--cream-dark);
+    border-radius: 12px;
+    padding: 24px;
+    flex: 1;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .pay-col-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: -4px;
+  }
+  .pay-field label {
+    font-size: 13px;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .pay-field input,
+  .pay-field textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #D5CDBB;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #ffffff;
+    box-sizing: border-box;
+    resize: none;
+  }
+  .fee-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid #BDB4A0;
+    border-radius: 12px;
+    padding: 14px 18px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .fee-row:hover {
+    border-color: var(--cashier-color);
+  }
+  .fee-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--registrar-color);
+    cursor: pointer;
+  }
+  .fee-row span {
+    font-size: 14px;
+    color: #000000;
+  }
+  .pay-submit-btn {
+    background: var(--navy-900);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 16px 24px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    align-self: center;
+    margin-top: 8px;
+  }
+  .pay-submit-btn:hover {
+    filter: brightness(1.1);
+  }
+  @media (max-width: 700px) {
+    .pay-columns { flex-direction: column; }
+  }
+
+  .summary-box {
+    background: var(--cream-dark);
+    border-radius: 12px;
+    padding: 24px 28px;
+  }
+
+  .summary-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .summary-row span:first-child {
+    font-size: 15px;
+    color: var(--text-dark);
+  }
+
+  .summary-row span:last-child {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .summary-amount-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+  .summary-amount-input {
+    width: 150px;
+    padding: 10px 12px;
+    border: 2px solid #CFC8B8;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    text-align: right;
+    color: var(--text-dark);
+    background: #ffffff;
+  }
+  .summary-amount-input:focus {
+    outline: none;
+    border-color: var(--cashier-color);
+  }
+
+  .summary-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+  }
+
+  .summary-total-label {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-dark);
+  }
+
+  .summary-total-value {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--registrar-color);
+  }
+
+  .pay-method-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pay-method-group select {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #D5CDBB;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #ffffff;
+    box-sizing: border-box;
+    cursor: pointer;
+  }
+
+  .pay-process-btn {
+    background: var(--cashier-color);
+    color: var(--navy-900);
+    border: none;
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .pay-process-btn:hover {
+    filter: brightness(1.08);
+  }
+
+  .success-card {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.4);
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 460px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .success-icon {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--navy-700);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .success-title {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 40px;
+  }
+
+  .success-label {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  .success-ticket {
+    font-size: 64px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+  }
+
+  .success-ticket.reg-ticket { color: var(--registrar-color); }
+  .success-ticket.cashier-ticket { color: var(--gold-deep); }
+
+  .success-note {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 32px;
+  }
+
+  .success-actions {
+    display: flex;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .success-btn {
+    flex: 1;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid #BDB4A0;
+  }
+
+  .success-btn.print-btn.reg-print {
+    background: var(--registrar-color);
+    color: #ffffff;
+    border-color: var(--registrar-color);
+  }
+
+  .success-btn.print-btn.cashier-print {
+    background: var(--cashier-color);
+    color: var(--navy-900);
+    border-color: var(--cashier-color);
+  }
+
+  .success-btn.print-btn:hover {
+    filter: brightness(0.95);
+  }
+
+  .success-btn.done-btn {
+    background: #ffffff;
+    color: var(--text-dark);
+  }
+
+  .success-btn.done-btn:hover {
+    background: var(--cream-dark);
+  }
+  .chat-screen {
+    position: relative;
+    z-index: 1;
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    gap: 0;
+  }
+  .chat-sidebar {
+    width: 100%;
+    flex: 1;
+    background: var(--cream);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 44px;
+    overflow-y: auto;
+    transition: width 0.2s ease, max-width 0.2s ease;
+  }
+  .chat-screen.chat-active .chat-sidebar {
+    width: 640px;
+    max-width: 58vw;
+    flex: none;
+    flex-shrink: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 44px 44px 120px;
+  }
+  .chat-heading {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text-dark);
+    line-height: 1.3;
+    margin-bottom: 26px;
+    text-align: center;
+  }
+  .chat-screen.chat-active .chat-heading {
+    text-align: left;
+  }
+  .chat-subtitle {
+    font-size: 21px;
+    color: var(--text-dark);
+    margin-bottom: 32px;
+  }
+  .chat-options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    width: 100%;
+    max-width: 620px;
+    justify-content: center;
+  }
+  .chat-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: none;
+    border-radius: 14px;
+    padding: 20px 22px;
+    cursor: pointer;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 700;
+    text-align: left;
+    transition: transform 0.15s ease, filter 0.15s ease;
+  }
+  .chat-option-btn:hover {
+    transform: translateY(-2px);
+    filter: brightness(0.97);
+  }
+  .chat-option-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .chat-option-btn.chat-blue { background: #14305E; }
+  .chat-option-btn.chat-cyan { background: #2F5F9E; }
+  .chat-option-btn.chat-green { background: #9A7410; }
+  .chat-option-btn.chat-red { background: #8C2F39; }
+  .chat-option-btn.chat-orange { background: #B7701F; }
+  .chat-option-btn.chat-gray { background: #5F6E86; }
+
+  .chat-panel {
+    flex: 1;
+    min-width: 0;
+    display: none;
+    flex-direction: column;
+    background: #FBF9F4;
+  }
+  .chat-screen.chat-active .chat-panel {
+    display: flex;
+  }
+  .chat-panel-header {
+    background: var(--navy-700);
+    border-bottom: 3px solid var(--cashier-color);
+    color: #ffffff;
+    padding: 26px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  .chat-panel-back {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .chat-panel-title {
+    font-size: 20px;
+    font-weight: 700;
+    flex: 1;
+  }
+  .chat-panel-icon {
+    display: flex;
+    align-items: center;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .chat-bubble-row {
+    display: flex;
+  }
+  .chat-bubble-row.bot {
+    justify-content: flex-start;
+  }
+  .chat-bubble-row.user {
+    justify-content: flex-end;
+  }
+  .chat-bubble {
+    max-width: 62%;
+    padding: 16px 22px;
+    border-radius: 20px;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .chat-bubble.user {
+    background: linear-gradient(135deg, #1F4A8A, #14305E);
+    color: #ffffff;
+    border-bottom-right-radius: 6px;
+  }
+  .chat-bubble.bot {
+    background: var(--cream-dark);
+    color: #2B3A52;
+    border-bottom-left-radius: 6px;
+  }
+  .chat-bubble.bot strong {
+    color: var(--navy-900);
+  }
+  .chat-bubble.bot p {
+    margin: 0 0 8px;
+  }
+  .chat-bubble.bot p:last-child {
+    margin-bottom: 0;
+  }
+  .chat-bubble.bot ul {
+    margin: 4px 0 10px 18px;
+  }
+  .chat-bubble.bot ul:last-child {
+    margin-bottom: 0;
+  }
+  .chat-bubble.bot li {
+    margin-bottom: 4px;
+  }
+  .chat-quick-replies {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 40px 12px;
+    flex-shrink: 0;
+    max-height: 190px;
+    overflow-y: auto;
+  }
+  .chat-quick-replies:empty {
+    display: none;
+  }
+  .chat-quick-reply-btn {
+    flex: 1 1 200px;
+    background: var(--navy-700);
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .chat-input-row {
+    display: flex;
+    gap: 12px;
+    padding: 12px 40px 28px;
+    flex-shrink: 0;
+  }
+  .chat-select {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 18px;
+    border: 2px solid #C9CFD9;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    background: #ffffff;
+    color: var(--text-dark);
+    cursor: pointer;
+  }
+  .chat-select:focus {
+    outline: none;
+    border-color: var(--navy-700);
+  }
+  .chat-clear-btn {
+    background: var(--cream-dark);
+    color: var(--navy-900);
+    border: 1px solid #C9CFD9;
+    border-radius: 10px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .chat-clear-btn:hover {
+    filter: brightness(0.96);
+  }
+  .chat-quick-reply-btn:hover {
+    filter: brightness(1.08);
+  }
+
+  .chat-back-btn {
+    position: fixed;
+    bottom: 32px;
+    left: 32px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--navy-900);
+    z-index: 2;
+  }
+  @media (max-width: 900px) {
+    .chat-screen { flex-direction: column; }
+    .chat-sidebar { width: 100%; max-width: none; padding-bottom: 24px; }
+    .chat-panel { min-height: 60vh; }
+    .chat-bubble { max-width: 80%; }
+  }
+  @media (max-width: 640px) {
+    .chat-sidebar { padding: 24px 24px 96px; }
+    .chat-options-grid { grid-template-columns: minmax(0, 1fr); }
+    .chat-back-btn { left: 16px; bottom: 16px; }
+    .chat-messages { padding: 24px; }
+    .chat-quick-replies { padding: 16px 24px 8px; flex-direction: column; }
+    .chat-input-row { padding: 12px 24px 24px; flex-wrap: wrap; }
+    .chat-select { flex-basis: 100%; }
+    .chat-clear-btn { flex: 1; padding: 14px 20px; }
+  }
+</style>
+</head>
+<body>
+  <div class="circle light circle-tl-light"></div>
+  <div class="circle dark circle-tl-dark"></div>
+  <div class="circle light circle-tr-light"></div>
+  <div class="circle dark circle-br-dark"></div>
+  <div class="circle light circle-br-light"></div>
+  <div class="kiosk-container screen active" id="screen-home">
+    <h1>How can we help you today?</h1>
+    <p class="subtitle">Please select a service to get in line or make a payment..</p>
+    <div class="cards">
+      <div class="service-card registrar" tabindex="0" role="button" onclick="selectService('registrar')">
+        <div class="card-top-bar"></div>
+        <div class="icon-wrap">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#14305E" stroke-width="2">
+            <rect x="3" y="7" width="18" height="12" rx="1"/>
+            <path d="M3 7l2-4h14l2 4"/>
+            <line x1="9" y1="12" x2="15" y2="12"/>
+          </svg>
+        </div>
+        <div class="card-title">REGISTRAR SERVICES</div>
+        <div class="tag-row">
+          <span class="tag">Transcripts</span>
+          <span class="tag">Form 137</span>
+          <span class="tag">Good moral</span>
+        </div>
+        <div class="tag-row">
+          <span class="tag">Cards</span>
+        </div>
+        <button class="select-link" onclick="event.stopPropagation(); selectService('registrar')">
+          Select services &#8594;
+        </button>
+        <div class="est-time">EST. TIME: 12 MINS</div>
+      </div>
+      <div class="service-card cashier" tabindex="0" role="button" onclick="selectService('cashier')">
+        <div class="card-top-bar"></div>
+        <div class="icon-wrap">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#C9A227" stroke-width="2">
+            <rect x="2" y="6" width="20" height="14" rx="2"/>
+            <line x1="2" y1="11" x2="22" y2="11"/>
+          </svg>
+        </div>
+        <div class="card-title">CASHIER SERVICES</div>
+        <div class="tag-row">
+          <span class="tag">Tuition</span>
+          <span class="tag">Uniform</span>
+          <span class="tag">Fees</span>
+          <span class="tag">Documents</span>
+        </div>
+        <button class="select-link" onclick="event.stopPropagation(); selectService('cashier')">
+          Select services &#8594;
+        </button>
+        <div class="est-time">EST. TIME: 9 MINS</div>
+      </div>
+    </div>
+  </div>
+  <div class="reg-screen screen" id="screen-registrar">
+    <div class="reg-card">
+      <h2>Registration Information</h2>
+      <form onsubmit="return handleRegistrationSubmit(event)">
+        <div class="pop-form-group">
+          <label>Student's Full Name*</label>
+          <input type="text" id="regStudentName" placeholder="Enter full name" required>
+        </div>
+        <div class="pop-form-group">
+          <label>Parent/Guardian*</label>
+          <input type="text" id="regParentGuardian" placeholder="Enter parent or guardian name" required>
+        </div>
+        <div class="pop-form-group">
+          <label>Contact Number*</label>
+          <input type="tel" id="regContactNumber" placeholder="Enter contact number" required>
+        </div>
+        <div class="pop-form-group">
+          <label>Email*</label>
+          <input type="email" id="regEmail" placeholder="Enter email address" required>
+        </div>
+        <button type="submit" class="reg-submit-btn">Proceed →</button>
+      </form>
+    </div>
+  </div>
+  <div class="reg-screen screen" id="screen-inquiry">
+    <div class="reg-card">
+      <h2>Registration Inquiry</h2>
+      <p class="reg-subtitle">Please select a service..</p>
+      <label class="reg-label">Select Documents*</label>
+      <form onsubmit="return handleInquirySubmit(event)">
+        <div class="reg-doc-list">
+          <label class="reg-doc-row">
+            <input type="checkbox" name="inquiry-doc" value="Transcripts">
+            <span>Transcripts</span>
+          </label>
+          <label class="reg-doc-row">
+            <input type="checkbox" name="inquiry-doc" value="Form 137">
+            <span>Form 137</span>
+          </label>
+          <label class="reg-doc-row">
+            <input type="checkbox" name="inquiry-doc" value="Certificate of Good Moral">
+            <span>Certificate of Good Moral</span>
+          </label>
+          <label class="reg-doc-row">
+            <input type="checkbox" name="inquiry-doc" value="Grade Card">
+            <span>Grade Card</span>
+          </label>
+        </div>
+        <button type="submit" class="reg-submit-btn">Proceed →</button>
+      </form>
+    </div>
+  </div>
+  <div class="reg-screen screen" id="screen-transaction">
+    <div class="reg-card">
+      <h2>Transaction Details</h2>
+      <p class="reg-subtitle">Please review your information carefully. Incorrect details may delay processing.</p>
+      <div class="txn-details-box">
+        <p><span>Student Name:</span> <strong id="txnStudentName"></strong></p>
+        <p><span>Parent/Guardian:</span> <strong id="txnParentGuardian"></strong></p>
+        <p><span>Transaction Type:</span></p>
+        <p><strong id="txnTransactionType"></strong></p>
+      </div>
+      <div class="txn-action-row">
+        <button type="button" class="txn-btn txn-edit" onclick="editDetails()">Edit Details</button>
+        <button type="button" class="txn-btn txn-confirm" onclick="confirmTransaction()">Confirm</button>
+        <button type="button" class="txn-btn txn-cancel" onclick="cancelTransaction()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div class="reg-screen screen" id="screen-cashier">
+    <div class="reg-card" style="max-width: 900px;">
+      <h2>Payment Information</h2>
+      <p class="reg-subtitle">Please enter student and payment details</p>
+      <form onsubmit="return handleCashierSubmit(event)">
+        <div class="pay-columns">
+          <div class="pay-col">
+            <div class="pay-field">
+              <label>Student's Full Name*</label>
+              <input type="text" id="payStudentName" placeholder="Enter full name" required>
+            </div>
+            <div class="pay-field">
+              <label>Payer's name*</label>
+              <input type="text" id="payPayerName" placeholder="Enter payer's name" required>
+            </div>
+            <div class="pay-field">
+              <label>Contact Number*</label>
+              <input type="tel" id="payContactNumber" placeholder="Enter contact number" required>
+            </div>
+            <div class="pay-field">
+              <label>Email*</label>
+              <input type="email" id="payEmail" placeholder="Enter email address" required>
+            </div>
+          </div>
+          <div class="pay-col">
+            <div class="pay-col-title">Select fees to pay*</div>
+            <label class="fee-row">
+              <input type="checkbox" name="fee" value="Tuition Fee">
+              <span>Tuition Fee</span>
+            </label>
+            <label class="fee-row">
+              <input type="checkbox" name="fee" value="Uniform Fee">
+              <span>Uniform Fee</span>
+            </label>
+            <label class="fee-row">
+              <input type="checkbox" name="fee" value="Books & Materials">
+              <span>Books & Materials</span>
+            </label>
+            <label class="fee-row">
+              <input type="checkbox" name="fee" value="Extra Activities">
+              <span>Extra Activities</span>
+            </label>
+            <label class="fee-row">
+              <input type="checkbox" name="fee" value="Other">
+              <span>Other</span>
+            </label>
+          </div>
+        </div>
+        <button type="submit" class="pay-submit-btn">Proceed to Payment &#8594;</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="reg-screen screen" id="screen-payment-summary">
+    <div class="reg-card" style="max-width: 650px;">
+      <h2>Payment Summary</h2>
+      <p class="reg-subtitle">Review and complete your payment</p>
+      <div class="summary-box">
+        <div class="summary-rows" id="summaryRows"></div>
+        <div class="summary-total-row">
+          <span class="summary-total-label">Total Amount</span>
+          <span class="summary-total-value" id="summaryTotal"></span>
+        </div>
+      </div>
+      <div class="pay-method-group">
+        <label class="reg-label">Select Payment Method*</label>
+        <select id="paymentMethod">
+          <option value="" selected disabled>Select Payment</option>
+          <option value="Cash">Cash</option>
+          <option value="GCash">GCash</option>
+          <option value="PayMaya">PayMaya</option>
+        </select>
+      </div>
+      <button type="button" class="pay-process-btn" onclick="processPayment()">Process Payment</button>
+    </div>
+  </div>
+  <div class="reg-screen screen" id="screen-success-registrar">
+    <div class="success-card">
+      <div class="success-icon">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8C766" stroke-width="3">
+          <path d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <div class="success-title">Transaction Success!</div>
+      <div class="success-label">Your queue number is:</div>
+      <div class="success-ticket reg-ticket" id="regTicketNumber"></div>
+      <div class="success-note">Please wait your number to be called at the Registrar Counter</div>
+      <div class="success-actions">
+        <button class="success-btn print-btn reg-print" onclick="printReceipt()">Print Receipt</button>
+        <button class="success-btn done-btn" onclick="doneRegistrarTransaction()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="reg-screen screen" id="screen-success-cashier">
+    <div class="success-card">
+      <div class="success-icon">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8C766" stroke-width="3">
+          <path d="M5 13l4 4L19 7"/>
+        </svg>
+      </div>
+      <div class="success-title">Payment Success!</div>
+      <div class="success-label">Your queue number is:</div>
+      <div class="success-ticket cashier-ticket" id="cashierTicketNumber"></div>
+      <div class="success-note">Please wait your number to be called at the Cashier Counter</div>
+      <div class="success-actions">
+        <button class="success-btn print-btn cashier-print" onclick="printReceipt()">Print Receipt</button>
+        <button class="success-btn done-btn" onclick="doneCashierTransaction()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-screen screen" id="screen-chatbot">
+    <div class="chat-sidebar">
+    <h1 class="chat-heading">Hello! Welcome to La Naval Chat Support<br>I'm here to help answer your questions.</h1>
+    <p class="chat-subtitle">What would you like to know?</p>
+    <div class="chat-options-grid">
+      <button class="chat-option-btn chat-blue" onclick="chatOption('Enrollment Information')">
+        <span class="chat-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+            <path d="M4 4h11a2 2 0 0 1 2 2v14l-7.5-4L4 20V4z"/>
+          </svg>
+        </span>
+        Enrollment Information
+      </button>
+      <button class="chat-option-btn chat-cyan" onclick="chatOption('Office Hours')">
+        <span class="chat-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 7v5l3 3"/>
+          </svg>
+        </span>
+        Office Hours
+      </button>
+      <button class="chat-option-btn chat-green" onclick="chatOption('Payment & Fees')">
+        <span class="chat-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+            <rect x="2" y="6" width="20" height="14" rx="2"/>
+            <line x1="2" y1="11" x2="22" y2="11"/>
+          </svg>
+        </span>
+        Payment &amp; Fees
+      </button>
+      <button class="chat-option-btn chat-red" onclick="chatOption('Where to go')">
+        <span class="chat-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+            <path d="M12 21s7-7.5 7-12a7 7 0 0 0-14 0c0 4.5 7 12 7 12z"/>
+            <circle cx="12" cy="9" r="2.5"/>
+          </svg>
+        </span>
+        Where to go
+      </button>
+      <button class="chat-option-btn chat-orange" onclick="chatOption('Requesting School Records')">
+        <span class="chat-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+            <rect x="6" y="4" width="12" height="17" rx="2"/>
+            <rect x="9" y="2.5" width="6" height="3" rx="1"/>
+            <line x1="9" y1="11" x2="15" y2="11"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+        </span>
+        Requesting School Records
+      </button>
+      <button class="chat-option-btn chat-gray" onclick="chatOption('Other Questions')">
+        <span class="chat-option-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            <path d="M10 10a2 2 0 1 1 3 1.7c-.6.4-1 .8-1 1.6"/>
+            <line x1="12" y1="16.5" x2="12" y2="16.5"/>
+          </svg>
+        </span>
+        Other Questions
+      </button>
+    </div>
+    </div>
+    <div class="chat-panel">
+      <div class="chat-panel-header">
+        <button class="chat-panel-back" onclick="showScreen('screen-home')" aria-label="Back">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+            <path d="M19 12H5"/>
+            <path d="M11 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        <span class="chat-panel-title">Chatbot Support</span>
+        <span class="chat-panel-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+            <rect x="5" y="9" width="14" height="12" rx="2"/>
+            <circle cx="12" cy="4" r="1.6"/>
+            <line x1="12" y1="5.6" x2="12" y2="9"/>
+          </svg>
+        </span>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-quick-replies" id="chatQuickReplies"></div>
+      <div class="chat-input-row">
+        <select class="chat-select" id="chatFaqSelect" onchange="handleFaqSelect(this.value)">
+          <option value="">Select a frequently asked question...</option>
+        </select>
+        <button type="button" class="chat-clear-btn" onclick="clearChat()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="chat-back-btn" id="chatBackBtn" onclick="showScreen('screen-home')">
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#0A1F3F" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M14 8l-4 4 4 4"/>
+    </svg>
+    Back
+  </button>
+
+  <button class="reg-back-btn" id="regBackBtn" onclick="showScreen('screen-home')">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#E8C766" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M14 8l-4 4 4 4"/>
+    </svg>
+    Back
+  </button>
+  <button class="chatbot-support" id="chatbotSupportBtn" onclick="selectService('chatbot')">
+    <div class="chatbot-icon-box">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#0A1F3F" stroke-width="2">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+      </svg>
+    </div>
+    <span class="chatbot-label">CHATBOT SUPPORT</span>
+  </button>
+  <div class="nav-pill" id="navPill">
+    <button aria-label="Previous">&#8249;</button>
+    <div class="divider"></div>
+    <button aria-label="Next">&#8250;</button>
+  </div>
+  <div class="pop-overlay" id="popOverlay">
+    <div class="pop-card" id="popCard"></div>
+  </div>
+  <script>
+    let currentService = '';
+    let guestData = { name: '', contactNumber: '' };
+    let enrolledData = { name: '', grade: '', schoolYear: '' };
+    let transactionData = {
+      studentName: '',
+      parentGuardian: '',
+      contactNumber: '',
+      email: '',
+      transactionType: []
+    };
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+
+      const isChatScreen = (id === 'screen-chatbot');
+      document.getElementById('chatBackBtn').style.display = isChatScreen ? 'flex' : 'none';
+      document.getElementById('chatbotSupportBtn').style.display = isChatScreen ? 'none' : 'flex';
+      document.getElementById('navPill').style.display = isChatScreen ? 'none' : 'flex';
+
+      const showBackBtn = (id === 'screen-registrar' || id === 'screen-inquiry' || id === 'screen-transaction' || id === 'screen-cashier' || id === 'screen-payment-summary');
+      if (id === 'screen-success-registrar' || id === 'screen-success-cashier' || isChatScreen) {
+        document.getElementById('regBackBtn').style.display = 'none';
+        return;
+      }
+      document.getElementById('regBackBtn').style.display = showBackBtn ? 'flex' : 'none';
+      let backTarget = 'screen-home';
+      if (id === 'screen-inquiry') backTarget = 'screen-registrar';
+      if (id === 'screen-transaction') backTarget = 'screen-inquiry';
+      if (id === 'screen-cashier') backTarget = 'screen-home';
+      if (id === 'screen-payment-summary') backTarget = 'screen-cashier';
+      document.getElementById('regBackBtn').setAttribute('onclick', "showScreen('" + backTarget + "')");
+    }
+    function selectService(service) {
+      console.log('Selected service:', service);
+      if (service === 'registrar' || service === 'cashier') {
+        currentService = service;
+        showEnrollmentQuestion();
+        return;
+      }
+      if (service === 'chatbot') {
+        showChatWelcome();
+        showScreen('screen-chatbot');
+        return;
+      }
+      alert('Selected: ' + service + '\n\n(Next: this will navigate to the ' + service + ' screen)');
+    }
+
+    const REGISTRAR_LOCATION = 'The Registrar counter is on the ground floor, right past the main entrance.';
+    const CASHIER_LOCATION = 'The Cashier counter is on the ground floor, to the left of the main entrance, next to the waiting area.';
+
+    const CHAT_WELCOME = "<p>Hello! I'm your School Records Assistant. How can I help you today?</p>";
+
+    const CHAT_KB = [
+      {
+        id: 'request',
+        question: 'How do I request school records?',
+        keywords: ['how do i request', 'how to request', 'how can i request', 'request sf10', 'request form 137', 'request my child', 'request school records', 'request records', 'get my child', 'get sf10', 'get form 137', 'apply for', 'sf10', 'sf 10', 'form 137', 'form137', 'f137', 'request letter', 'request'],
+        answer: "<p>To request your child's SF10 (Form 137), a <strong>request letter from the parent or guardian</strong> is required.</p><p><strong>Steps:</strong></p><ul><li>Prepare a request letter from the parent or guardian.</li><li>If the records are from another school, a request letter from that school may also be required.</li><li>Provide the student's full name, grade level, school year, and LRN, if available.</li><li>Submit your request to the registrar.</li></ul>"
+      },
+      {
+        id: 'documents',
+        question: 'What documents are required?',
+        keywords: ['documents required', 'required documents', 'documents are required', 'what documents', 'which documents', 'what do i need', 'what to bring', 'need to bring', 'what should i bring', 'requirements', 'requirement', 'documents', 'bring', 'needed', 'prepare', 'is required', 'are required'],
+        answer: "<p>For an SF10 (Form 137) request, please prepare:</p><ul><li>A request letter from the parent or guardian</li><li>A request letter from the other school, if the records are being requested from another school</li><li>The student's full name, grade level, school year, and LRN (Learner Reference Number), if available</li></ul><p>If another person will claim the records for you, additional documents are needed.</p>"
+      },
+      {
+        id: 'time',
+        question: 'How long does processing take?',
+        keywords: ['how long', 'processing time', 'process time', 'how long does', 'processing', 'turnaround', 'how many days', 'how many weeks', 'working days', 'when will it be ready', 'when can i get', 'how soon', 'estimated time', 'days', 'weeks'],
+        answer: "<p>Processing time depends on the request:</p><ul><li><strong>Certification only:</strong> usually 3-5 working days</li><li><strong>Needs extra verification or record retrieval:</strong> 1-2 weeks</li><li><strong>Records from another school, or discrepancies in student information:</strong> about 2 weeks or longer</li></ul><p>The registrar will give you an estimated completion date once your request is verified.</p>"
+      },
+      {
+        id: 'fee',
+        question: 'Are there any fees?',
+        keywords: ['fee', 'fees', 'how much', 'cost', 'price', 'charge', 'charges', 'is there a fee', 'any fees', 'payment fee', 'free'],
+        answer: "<p>Yes, fees may apply when requesting school records.</p><p>The registrar will inform you of the applicable fees. I can't give you an exact amount here, so please confirm it with the registrar.</p>"
+      },
+      {
+        id: 'online',
+        question: 'Can I request school records online?',
+        keywords: ['online', 'submit online', 'online form', 'online request', 'request form', 'website', 'internet'],
+        answer: "<p>Yes, you can request school records online.</p><p><strong>Steps:</strong></p><ul><li>Submit the online request form and the required documents.</li><li>The registrar verifies the student's information.</li><li>The registrar informs you of any applicable fees.</li><li>Follow the school's payment procedure.</li><li>The registrar processes your request and gives you an estimated completion date.</li><li>Wait for confirmation about the release of the records.</li></ul>"
+      },
+      {
+        id: 'authorize',
+        question: 'Can I authorize another person to claim the records?',
+        keywords: ['authorize', 'authorise', 'authorization', 'authorization letter', 'authorized', 'representative', 'claim', 'someone else', 'another person', 'other person', 'on behalf', 'relative', 'lola', 'lolo', 'aunt', 'uncle', 'grandparent', 'sibling', 'claim for'],
+        answer: "<p>Yes, you can authorize another person to claim your child's school records.</p><p>The authorized representative must bring:</p><ul><li>A signed authorization letter from the parent or guardian</li><li>A photocopy of the parent's or guardian's valid ID</li><li>A photocopy of the representative's valid ID</li><li>Proof of payment, when applicable</li></ul>"
+      },
+      {
+        id: 'sent',
+        question: 'Has my child\'s SF10 already been sent to the new school?',
+        keywords: ['already sent', 'been sent', 'sent to', 'new school', 'receiving school', 'transferred', 'transfer', 'forwarded', 'was it sent', 'has it been sent', 'received by', 'confirm receipt', 'sent already'],
+        answer: "<p>If the records have already been released and sent, please contact the receiving school to confirm that they received them.</p><p>To confirm whether the records were released, please contact the school registrar.</p>"
+      },
+      {
+        id: 'pickup',
+        question: 'Can I personally pick up the records?',
+        keywords: ['personally', 'personally claim', 'pick up', 'pickup', 'pick it up', 'claim myself', 'claim it myself', 'get it myself', 'walk in', 'go to school'],
+        answer: "<p>Yes. Parents or legal guardians may personally claim their child's school records, subject to the school's requirements and release procedures.</p>"
+      },
+      {
+        id: 'notreleased',
+        question: 'What if my child\'s records have not been released yet?',
+        keywords: ['not released', 'not yet released', 'have not been released', 'havent been released', 'not been released', 'not released yet', 'delayed', 'delay', 'still waiting', 'havent received', 'not received', 'not yet received', 'taking so long', 'taking too long', 'long time', 'no update', 'late'],
+        answer: "<p>We apologize for the delay. Please contact or visit the registrar's office to follow up on your request.</p><p>The registrar can check the records and update you on any pending requirements or the expected release date.</p>"
+      },
+      {
+        id: 'track',
+        question: 'How can I track my request?',
+        keywords: ['follow up', 'followup', 'follow up on my request', 'track', 'tracking', 'track my request', 'status', 'check status', 'request status', 'where is my request', 'update on my request', 'check my request', 'status of my request'],
+        answer: "<p>I can't see the live status of individual requests, so I can't tell you exactly where yours is.</p><p><strong>To follow up:</strong></p><ul><li>Contact or visit the registrar's office.</li><li>Give the student's full name and the date of your request.</li><li>The registrar will locate the record and give you an update.</li></ul>"
+      },
+      {
+        id: 'sf9',
+        question: 'What about SF9 (Form 138)?',
+        keywords: ['sf9', 'sf 9', 'form 138', 'form138', 'f138', 'report card'],
+        answer: "<p>I don't have specific details about SF9 (Form 138) requests. The registrar's office can give you the correct requirements and procedure.</p><p>I can help with questions about SF10 (Form 137) requests.</p>"
+      },
+      {
+        id: 'paymentmethods',
+        question: 'What payment methods are accepted?',
+        keywords: ['gcash', 'paymaya', 'cash', 'payment method', 'payment methods', 'mode of payment', 'how to pay', 'how do i pay', 'accepted payment', 'pay'],
+        answer: "<p>Payments can be made at the Cashier.</p><p><strong>Accepted:</strong></p><ul><li>Cash</li><li>GCash</li><li>PayMaya</li></ul>"
+      },
+      {
+        id: 'hours',
+        question: 'What are the office hours?',
+        keywords: ['office hours', 'what time', 'operating hours', 'open', 'opening', 'closing', 'close', 'hours', 'operate', 'schedule'],
+        answer: "<p>Our office hours are:</p><p>Monday &ndash; Friday: 8:00 AM &ndash; 5:00 PM</p><p>We are closed on Sundays and holidays.</p>"
+      },
+      {
+        id: 'acctHours',
+        question: 'What are the Accounting office hours?',
+        keywords: ['accounting hours', 'accounting office hours', 'accounting office', 'accounting', 'accounting open'],
+        answer: "<p>The Accounting office hours are:</p><p>Monday &ndash; Friday: 7:00 AM &ndash; 3:00 PM</p>"
+      },
+      {
+        id: 'acctContact',
+        question: 'How can I contact Accounting?',
+        keywords: ['contact accounting', 'accounting contact', 'accounting number', 'contact number', 'viber', 'landline', 'phone number', 'call'],
+        answer: "<p>You can reach Accounting through:</p><ul><li><strong>Viber:</strong> 0962-7266207</li><li><strong>Landline:</strong> 8-3515683</li></ul>"
+      },
+      {
+        id: 'acctOnline',
+        question: 'How do I pay online?',
+        keywords: ['online payment', 'pay online', 'eastwest', 'eastwest bank', 'bank'],
+        answer: "<p>Online payments are made through <strong>EastWest Bank, Corp.</strong></p>"
+      },
+      {
+        id: 'acctTerms',
+        question: 'What are the terms of payment?',
+        keywords: ['terms of payment', 'payment terms', 'semestral', 'quarterly', 'monthly', 'installment'],
+        answer: "<p>The accepted terms of payment are:</p><ul><li>Cash</li><li>Semestral</li><li>Quarterly</li><li>Monthly</li></ul>"
+      },
+      {
+        id: 'enroll',
+        question: 'How does enrollment work?',
+        keywords: ['enrollment', 'enroll', 'enrolment', 're enroll', 'reenroll', 'new student', 'transferee', 'admission'],
+        answer: "<p>Enrollment for the upcoming school year is now open.</p><p>New and transferee students should proceed to the Registrar counter with their requirements ready.</p><p>Continuing students may re-enroll directly at the Cashier for tuition and fee settlement.</p>"
+      },
+      {
+        id: 'location',
+        question: 'Where do I go?',
+        keywords: ['where', 'location', 'located', 'directions', 'counter', 'where to go', 'find'],
+        answer: "<p>" + REGISTRAR_LOCATION + "</p><p>" + CASHIER_LOCATION + "</p>"
+      },
+      {
+        id: 'regloc',
+        question: 'Where is the Registrar?',
+        keywords: ['where is the registrar', 'where is registrar', 'registrar location', 'registrar counter', 'registrars office', 'registrar office'],
+        answer: "<p>" + REGISTRAR_LOCATION + "</p>"
+      },
+      {
+        id: 'cashloc',
+        question: 'Where is the Cashier?',
+        keywords: ['where is the cashier', 'where is cashier', 'cashier location', 'cashier counter', 'cashiers office', 'cashier office'],
+        answer: "<p>" + CASHIER_LOCATION + "</p>"
+      }
+    ];
+
+    function chatFaq(id) {
+      return CHAT_KB.find(f => f.id === id);
+    }
+
+    const CHAT_TOPICS = {
+      'Requesting School Records': {
+        faqs: ['request', 'documents', 'time', 'fee', 'online', 'authorize', 'pickup', 'sent', 'notreleased', 'track', 'sf9', 'regloc'],
+        start: 'request'
+      },
+      'Where to go': {
+        faqs: ['location', 'regloc', 'cashloc'],
+        start: 'location'
+      },
+      'Office Hours': {
+        faqs: ['hours', 'acctHours', 'acctContact'],
+        start: 'hours'
+      },
+      'Payment & Fees': {
+        faqs: ['paymentmethods', 'fee', 'acctOnline', 'acctTerms', 'cashloc'],
+        start: 'paymentmethods'
+      },
+      'Enrollment Information': {
+        faqs: ['enroll', 'regloc'],
+        start: 'enroll'
+      },
+      'Other Questions': {
+        faqs: [],
+        start: null
+      }
+    };
+
+    const CHAT_OTHER_ANSWER = '<p>For questions not covered here, please proceed to the Registrar or Cashier counter and a staff member will be happy to assist you directly.</p>';
+
+    let chatTopic = '';
+    let chatAsked = [];
+
+    function topicOfFaq(id) {
+      return Object.keys(CHAT_TOPICS).find(t => CHAT_TOPICS[t].faqs.includes(id));
+    }
+
+    function faqReplies(ids) {
+      return ids.map(id => ({ label: chatFaq(id).question, action: 'faq', id: id }));
+    }
+
+    function nextReplies(includeEnd) {
+      const remaining = CHAT_TOPICS[chatTopic].faqs.filter(id => !chatAsked.includes(id)).slice(0, 2);
+      const replies = faqReplies(remaining);
+      if (includeEnd) {
+        replies.push({ label: 'OK, Thank you!', action: 'thanks' });
+      }
+      replies.push({ label: 'Back to main menu', action: 'close' });
+      return replies;
+    }
+
+    function answerFaq(faq) {
+      if (!chatAsked.includes(faq.id)) chatAsked.push(faq.id);
+      document.getElementById('chatFaqSelect').value = faq.id;
+      addChatBubble('bot', faq.answer);
+      setChatQuickReplies(nextReplies(true));
+    }
+
+    function buildFaqDropdown() {
+      const select = document.getElementById('chatFaqSelect');
+      const topicFaqs = CHAT_TOPICS[chatTopic].faqs;
+      select.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = topicFaqs.length ? 'Select a question about ' + chatTopic + '...' : 'No FAQ questions in this topic';
+      select.appendChild(placeholder);
+      select.disabled = topicFaqs.length === 0;
+      if (!topicFaqs.length) return;
+      const ownGroup = document.createElement('optgroup');
+      ownGroup.label = chatTopic;
+      topicFaqs.forEach(id => {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = chatFaq(id).question;
+        ownGroup.appendChild(option);
+      });
+      select.appendChild(ownGroup);
+      const others = CHAT_KB.filter(f => !topicFaqs.includes(f.id));
+      const otherGroup = document.createElement('optgroup');
+      otherGroup.label = 'Other topics';
+      others.forEach(f => {
+        const option = document.createElement('option');
+        option.value = f.id;
+        option.textContent = f.question;
+        otherGroup.appendChild(option);
+      });
+      select.appendChild(otherGroup);
+    }
+
+    function handleFaqSelect(id) {
+      if (!id) return;
+      const faq = chatFaq(id);
+      addChatBubble('user', faq.question);
+      if (CHAT_TOPICS[chatTopic].faqs.includes(id)) {
+        answerFaq(faq);
+        return;
+      }
+      const target = topicOfFaq(id);
+      document.getElementById('chatFaqSelect').value = '';
+      addChatBubble('bot', '<p>That question is about <strong>' + target + '</strong>, which is outside <strong>' + chatTopic + '</strong>.</p><p>Would you like to switch topics?</p>');
+      setChatQuickReplies([
+        { label: 'Yes, switch to ' + target, action: 'switch', topic: target, id: id },
+        { label: 'No, stay on ' + chatTopic, action: 'stay' },
+        { label: 'Back to main menu', action: 'close' }
+      ]);
+    }
+
+    function addChatBubble(role, html) {
+      const row = document.createElement('div');
+      row.className = 'chat-bubble-row ' + role;
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble ' + role;
+      bubble.innerHTML = html;
+      row.appendChild(bubble);
+      const messages = document.getElementById('chatMessages');
+      messages.appendChild(row);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function setChatQuickReplies(replies) {
+      const container = document.getElementById('chatQuickReplies');
+      container.innerHTML = '';
+      replies.forEach(reply => {
+        const btn = document.createElement('button');
+        btn.className = 'chat-quick-reply-btn';
+        btn.textContent = reply.label;
+        btn.onclick = () => handleChatQuickReply(reply);
+        container.appendChild(btn);
+      });
+    }
+
+    function showChatWelcome() {
+      chatTopic = '';
+      chatAsked = [];
+      document.getElementById('screen-chatbot').classList.remove('chat-active');
+      document.getElementById('chatMessages').innerHTML = '';
+      document.getElementById('chatQuickReplies').innerHTML = '';
+      const select = document.getElementById('chatFaqSelect');
+      select.innerHTML = '<option value="">Select a frequently asked question...</option>';
+      select.disabled = false;
+    }
+
+    function clearChat() {
+      if (!chatTopic) return;
+      chatAsked = [];
+      document.getElementById('chatMessages').innerHTML = '';
+      document.getElementById('chatFaqSelect').value = '';
+      addChatBubble('bot', CHAT_WELCOME);
+      setChatQuickReplies(CHAT_TOPICS[chatTopic].faqs.length ? nextReplies(false) : [{ label: 'Back to main menu', action: 'close' }]);
+    }
+
+    function chatOption(topic) {
+      chatTopic = topic;
+      chatAsked = [];
+      document.getElementById('screen-chatbot').classList.add('chat-active');
+      document.getElementById('chatMessages').innerHTML = '';
+      addChatBubble('bot', CHAT_WELCOME);
+      buildFaqDropdown();
+      const start = CHAT_TOPICS[topic].start;
+      if (!start) {
+        addChatBubble('user', 'I have another question.');
+        addChatBubble('bot', CHAT_OTHER_ANSWER);
+        setChatQuickReplies([
+          { label: 'OK, Thank you!', action: 'thanks' },
+          { label: 'Back to main menu', action: 'close' }
+        ]);
+        return;
+      }
+      const faq = chatFaq(start);
+      addChatBubble('user', faq.question);
+      answerFaq(faq);
+    }
+
+    function handleChatQuickReply(reply) {
+      if (reply.action === 'thanks') {
+        addChatBubble('user', 'Ok, Thank you!');
+      } else if (reply.action === 'faq') {
+        const faq = chatFaq(reply.id);
+        addChatBubble('user', faq.question);
+        answerFaq(faq);
+      } else if (reply.action === 'switch') {
+        addChatBubble('user', reply.label);
+        chatTopic = reply.topic;
+        chatAsked = [];
+        buildFaqDropdown();
+        answerFaq(chatFaq(reply.id));
+      } else if (reply.action === 'stay') {
+        addChatBubble('user', reply.label);
+        addChatBubble('bot', '<p>Okay! Let\'s continue with <strong>' + chatTopic + '</strong>.</p>');
+        setChatQuickReplies(nextReplies(true));
+      } else if (reply.action === 'close') {
+        showChatWelcome();
+      }
+    }
+    const popOverlay = document.getElementById('popOverlay');
+    const popCard = document.getElementById('popCard');
+    popOverlay.addEventListener('click', (e) => {
+      if (e.target === popOverlay) closePopup();
+    });
+    function closePopup() {
+      popOverlay.classList.remove('active');
+      popCard.innerHTML = '';
+    }
+    function showEnrollmentQuestion() {
+      popCard.className = 'pop-card';
+      popCard.innerHTML = `
+        <button class="pop-close-x" onclick="closePopup()">&times;</button>
+        <h2>ARE YOU ENROLLED?</h2>
+        <p class="pop-subtitle">Select an option to continue</p>
+        <div class="pop-choice-row">
+          <button class="pop-choice-btn pop-yes" onclick="showPopForm('enrolled')">Yes, I am</button>
+          <button class="pop-choice-btn pop-no" onclick="showNotEnrolledForm()">No, I'm not</button>
+        </div>
+      `;
+      popOverlay.classList.add('active');
+    }
+    function showNotEnrolledForm() {
+      popCard.className = 'pop-card pop-registration-info';
+      popCard.innerHTML = `
+        <button class="pop-close-x" onclick="showEnrollmentQuestion()">&times;</button>
+        <h2>YOUR DETAILS</h2>
+        <form onsubmit="return submitNotEnrolledForm(event)">
+          <div class="pop-form-group">
+            <label>Full Name*</label>
+            <input type="text" id="guestName" placeholder="Enter your full name" value="${guestData.name}" required>
+          </div>
+          <div class="pop-form-group">
+            <label>Contact Number*</label>
+            <input type="tel" id="guestContactNumber" inputmode="numeric" pattern="[0-9]{7,13}" maxlength="13" placeholder="e.g. 09123456789" value="${guestData.contactNumber}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+          </div>
+          <div class="pop-details-action-row">
+            <button type="button" class="pop-details-btn pop-cancel" onclick="showEnrollmentQuestion()">Cancel</button>
+            <button type="submit" class="pop-details-btn pop-confirm">Confirm</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('guestName').focus();
+    }
+    function submitNotEnrolledForm(e) {
+      e.preventDefault();
+      const name = document.getElementById('guestName').value.trim();
+      const contact = document.getElementById('guestContactNumber').value.trim();
+      if (!name) {
+        alert('Please enter your full name.');
+        return false;
+      }
+      if (!/^[0-9]{7,13}$/.test(contact)) {
+        alert('Please enter a valid contact number (numbers only).');
+        return false;
+      }
+      guestData.name = name;
+      guestData.contactNumber = contact;
+      verifyNotEnrolled();
+      return false;
+    }
+    function verifyNotEnrolled() {
+      popCard.className = 'pop-card pop-verified';
+      popCard.innerHTML = `
+        <h2>&#9989; USER VERIFIED!</h2>
+        <a class="pop-continue-link" onclick="continueAfterVerification()">Click here to continue</a>
+      `;
+    }
+    function schoolYearOptions() {
+      let html = '';
+      for (let year = 2020; year <= 2026; year++) {
+        const label = year + '-' + (year + 1);
+        html += '<option value="' + label + '"' + (enrolledData.schoolYear === label ? ' selected' : '') + '>' + label + '</option>';
+      }
+      return html;
+    }
+    function showPopForm(type) {
+      popCard.className = 'pop-card pop-registration-info';
+      popCard.innerHTML = `
+        <button class="pop-close-x" onclick="showEnrollmentQuestion()">&times;</button>
+        <h2>STUDENT DETAILS</h2>
+        <form onsubmit="return submitPopForm(event, 'enrolled')">
+          <div class="pop-form-group">
+            <label>Student Name*</label>
+            <input type="text" id="enrolledName" placeholder="Enter student's full name" value="${enrolledData.name}" required>
+          </div>
+          <div class="pop-form-group">
+            <label>Grade Level*</label>
+            <input type="text" id="enrolledGrade" placeholder="e.g. Grade 6" value="${enrolledData.grade}" required>
+          </div>
+          <div class="pop-form-group">
+            <label>School Year*</label>
+            <select id="enrolledSchoolYear" required>
+              <option value="" disabled ${enrolledData.schoolYear ? '' : 'selected'}>Select school year</option>
+              ${schoolYearOptions()}
+            </select>
+          </div>
+          <div class="pop-details-action-row">
+            <button type="button" class="pop-details-btn pop-cancel" onclick="showEnrollmentQuestion()">Cancel</button>
+            <button type="submit" class="pop-details-btn pop-confirm">Confirm</button>
+          </div>
+        </form>
+      `;
+      document.getElementById('enrolledName').focus();
+    }
+    function submitPopForm(e, type) {
+      e.preventDefault();
+      const name = document.getElementById('enrolledName').value.trim();
+      const grade = document.getElementById('enrolledGrade').value.trim();
+      const schoolYear = document.getElementById('enrolledSchoolYear').value.trim();
+      if (!name || !grade || !schoolYear) {
+        alert('Please complete all fields.');
+        return false;
+      }
+      enrolledData.name = name;
+      enrolledData.grade = grade;
+      enrolledData.schoolYear = schoolYear;
+      popCard.className = 'pop-card pop-verified';
+      popCard.innerHTML = `
+        <h2>&#9989; USER VERIFIED!</h2>
+        <a class="pop-continue-link" onclick="continueAfterVerification()">Click here to continue</a>
+      `;
+      return false;
+    }
+    function continueAfterVerification() {
+      closePopup();
+      if (currentService === 'registrar') {
+        showScreen('screen-registrar');
+      } else if (currentService === 'cashier') {
+        showScreen('screen-cashier');
+      }
+    }
+    function handleRegistrationSubmit(e) {
+      e.preventDefault();
+      transactionData.studentName = document.getElementById('regStudentName').value;
+      transactionData.parentGuardian = document.getElementById('regParentGuardian').value;
+      transactionData.contactNumber = document.getElementById('regContactNumber').value;
+      transactionData.email = document.getElementById('regEmail').value;
+      showScreen('screen-inquiry');
+      return false;
+    }
+    function handleInquirySubmit(e) {
+      e.preventDefault();
+      const selected = Array.from(document.querySelectorAll('#screen-inquiry input[name="inquiry-doc"]:checked')).map(el => el.value);
+      if (selected.length === 0) {
+        alert('Please select at least one document.');
+        return false;
+      }
+      transactionData.transactionType = selected;
+      populateTransactionDetails();
+      showScreen('screen-transaction');
+      return false;
+    }
+    function handleCashierSubmit(e) {
+      e.preventDefault();
+      const selectedFees = Array.from(document.querySelectorAll('#screen-cashier input[name="fee"]:checked')).map(el => el.value);
+      if (selectedFees.length === 0) {
+        alert('Please select at least one fee.');
+        return false;
+      }
+      transactionData.studentName = document.getElementById('payStudentName').value;
+      transactionData.parentGuardian = document.getElementById('payPayerName').value;
+      transactionData.contactNumber = document.getElementById('payContactNumber').value;
+      transactionData.email = document.getElementById('payEmail').value;
+      transactionData.transactionType = selectedFees;
+      populatePaymentSummary();
+      showScreen('screen-payment-summary');
+      return false;
+    }
+
+    function populatePaymentSummary() {
+      const rowsContainer = document.getElementById('summaryRows');
+      rowsContainer.innerHTML = '';
+      transactionData.transactionType.forEach(fee => {
+        const row = document.createElement('div');
+        row.className = 'summary-row';
+        const label = document.createElement('span');
+        label.textContent = fee;
+        const wrap = document.createElement('div');
+        wrap.className = 'summary-amount-wrap';
+        const peso = document.createElement('span');
+        peso.innerHTML = '&#8369;';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'summary-amount-input';
+        input.setAttribute('inputmode', 'decimal');
+        input.setAttribute('placeholder', '0');
+        input.setAttribute('aria-label', fee + ' amount');
+        input.addEventListener('input', () => {
+          let v = input.value.replace(/[^0-9.]/g, '');
+          const firstDot = v.indexOf('.');
+          if (firstDot !== -1) {
+            v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '').slice(0, 2);
+          }
+          input.value = v;
+          updateSummaryTotal();
+        });
+        wrap.appendChild(peso);
+        wrap.appendChild(input);
+        row.appendChild(label);
+        row.appendChild(wrap);
+        rowsContainer.appendChild(row);
+      });
+      updateSummaryTotal();
+      document.getElementById('paymentMethod').value = '';
+    }
+
+    function updateSummaryTotal() {
+      let total = 0;
+      document.querySelectorAll('#summaryRows .summary-amount-input').forEach(input => {
+        total += parseFloat(input.value) || 0;
+      });
+      document.getElementById('summaryTotal').innerHTML = '&#8369; ' + total.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function processPayment() {
+      const amountInputs = Array.from(document.querySelectorAll('#summaryRows .summary-amount-input'));
+      if (amountInputs.some(input => !(parseFloat(input.value) > 0))) {
+        alert('Please enter an amount for each selected fee.');
+        return;
+      }
+      const method = document.getElementById('paymentMethod').value;
+      if (!method) {
+        alert('Please select a payment method.');
+        return;
+      }
+      document.getElementById('cashierTicketNumber').textContent = generateTicketNumber('cashier');
+      showScreen('screen-success-cashier');
+    }
+
+    function generateTicketNumber(service) {
+      const prefix = service === 'cashier' ? 'C' : 'F';
+      const num = Math.floor(100 + Math.random() * 900);
+      return prefix + num;
+    }
+
+    function printReceipt() {
+      window.print();
+    }
+
+    function doneRegistrarTransaction() {
+      transactionData = {
+        studentName: '',
+        parentGuardian: '',
+        contactNumber: '',
+        email: '',
+        transactionType: []
+      };
+      showScreen('screen-home');
+    }
+
+    function doneCashierTransaction() {
+      transactionData = {
+        studentName: '',
+        parentGuardian: '',
+        contactNumber: '',
+        email: '',
+        transactionType: []
+      };
+      showScreen('screen-home');
+    }
+    function populateTransactionDetails() {
+      document.getElementById('txnStudentName').textContent = transactionData.studentName;
+      document.getElementById('txnParentGuardian').textContent = transactionData.parentGuardian;
+      document.getElementById('txnTransactionType').textContent = transactionData.transactionType.join('/ ');
+    }
+    function editDetails() {
+      document.getElementById('regStudentName').value = transactionData.studentName;
+      document.getElementById('regParentGuardian').value = transactionData.parentGuardian;
+      document.getElementById('regContactNumber').value = transactionData.contactNumber;
+      document.getElementById('regEmail').value = transactionData.email;
+      showScreen('screen-registrar');
+    }
+    function confirmTransaction() {
+      document.getElementById('regTicketNumber').textContent = generateTicketNumber('registrar');
+      showScreen('screen-success-registrar');
+    }
+    function cancelTransaction() {
+      transactionData = {
+        studentName: '',
+        parentGuardian: '',
+        contactNumber: '',
+        email: '',
+        transactionType: []
+      };
+      showScreen('screen-home');
+    }
+  </script>
+</body>
+</html>
