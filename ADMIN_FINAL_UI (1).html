@@ -1,0 +1,2411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Acadilynx — Staff Access</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#0B2545;
+    --navy-mid:#13315C;
+    --navy-line: rgba(255,255,255,0.09);
+    --brass:#C9A227;
+    --brass-soft:#E4C766;
+    --paper:#F5F3EC;
+    --paper-dim:#EAE7DC;
+    --ink:#1C2430;
+    --slate:#5A6472;
+    --ok:#4C7A63;
+    --warn:#B4602A;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--navy-deep); color:var(--ink);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:48px 20px; position:relative; overflow-x:hidden;
+  }
+  /* Full-width layout for the Staff Portal (step 5) instead of the centered ticket card */
+  body.portal-mode{
+    display:block; padding:0; background:#FAFAFC; align-items:stretch; justify-content:flex-start;
+  }
+  body.portal-mode::before, body.portal-mode::after{ display:none; }
+  body.portal-mode .brandline{ display:none; }
+  /* faint scanline texture, echoes the board-section on the dashboard */
+  body::before{
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background:repeating-linear-gradient(180deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 3px);
+  }
+  body::after{
+    content:""; position:absolute; top:-180px; left:50%; transform:translateX(-50%);
+    width:900px; height:420px; border-radius:50%;
+    background:radial-gradient(closest-side, rgba(201,162,39,0.16), transparent 72%);
+    pointer-events:none;
+  }
+
+  .brandline{ position:relative; display:flex; align-items:center; gap:10px; margin-bottom:26px; z-index:1;}
+  .brandline .mark{width:32px; height:32px; border-radius:7px; background:linear-gradient(155deg, var(--brass-soft), var(--brass)); display:flex; align-items:center; justify-content:center; font-family:'Fraunces',serif; font-weight:700; color:var(--navy-deep); font-size:15px;}
+  .brandline .name{font-family:'Fraunces',serif; font-weight:600; font-size:17px; color:#EDEEF2; letter-spacing:0.01em;}
+  .brandline .sub{font-size:10px; color:#93A0B8; letter-spacing:0.14em; text-transform:uppercase; margin-top:1px;}
+
+  /* TICKET CARD — a queue pass, since this system runs on tickets */
+  .ticket{
+    position:relative; z-index:1; width:100%; max-width:440px;
+    background:var(--paper); border-radius:16px;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04);
+  }
+
+  .ticket-head{
+    background:var(--navy-mid); border-radius:16px 16px 0 0; padding:28px 30px 26px;
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+    border-bottom:1px solid var(--navy-line); position:relative;
+  }
+  .back-btn{
+    position:absolute; top:16px; left:16px; width:30px; height:30px; border-radius:50%;
+    background:rgba(255,255,255,0.06); border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; color:#C4CBDA;
+    transition:background .15s ease, color .15s ease;
+  }
+  .back-btn:hover{ background:rgba(255,255,255,0.14); color:#fff; }
+  .back-btn svg{ width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2; }
+  .seal{
+    width:52px; height:52px; border-radius:50%;
+    background:radial-gradient(circle at 32% 28%, var(--brass-soft), var(--brass) 65%);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:14px;
+  }
+  .seal svg{width:22px; height:22px; stroke:var(--navy-deep); fill:none; stroke-width:2;}
+  .ticket-head h1{font-family:'Fraunces',serif; font-size:23px; font-weight:600; color:#F5F3EC; margin:0 0 5px;}
+  .ticket-head p{margin:0; font-size:12.5px; color:#9FAAC2;}
+
+  /* perforation seam with punched notches */
+  .perf{ position:relative; height:0; }
+  .perf::before{
+    content:""; position:absolute; top:-1px; left:22px; right:22px; height:0;
+    border-top:1.5px dashed rgba(90,100,114,0.35);
+  }
+  .notch{ position:absolute; top:-11px; width:22px; height:22px; border-radius:50%; background:var(--navy-deep); z-index:2;}
+  .notch.left{ left:-11px; }
+  .notch.right{ right:-11px; }
+
+  .ticket-body{ padding:30px 30px 26px; }
+
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--slate); margin-bottom:7px; }
+  .field .input-wrap{ position:relative; }
+  .field input{
+    width:100%; padding:11px 14px; font-family:'Inter',sans-serif; font-size:13.5px; color:var(--ink);
+    background:#fff; border:1px solid var(--paper-dim); border-radius:8px; outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input::placeholder{ color:#A7ADB8; }
+  .field input:focus{ border-color:var(--brass); box-shadow:0 0 0 3px rgba(201,162,39,0.18); }
+  .field input.invalid{ border-color:var(--warn); box-shadow:0 0 0 3px rgba(180,96,42,0.14); }
+  .field .error-text{ display:none; font-size:11px; color:var(--warn); margin-top:5px; }
+  .field.has-error .error-text{ display:block; }
+
+  .field .toggle-visibility{
+    position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+    background:none; border:none; cursor:pointer; color:var(--slate); border-radius:6px;
+  }
+  .field .toggle-visibility:hover{ background:var(--paper-dim); color:var(--ink); }
+  .field .toggle-visibility svg{ width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:1.8; }
+
+  .row-meta{ display:flex; justify-content:space-between; align-items:center; margin:2px 0 22px; font-size:12px; }
+  .row-meta label{ display:flex; align-items:center; gap:7px; color:var(--slate); cursor:pointer; }
+  .row-meta input[type=checkbox]{ accent-color:var(--brass); width:14px; height:14px; }
+  .row-meta a{ color:var(--navy-mid); text-decoration:none; font-weight:600; }
+  .row-meta a:hover{ text-decoration:underline; }
+
+  .btn{
+    width:100%; padding:12.5px 14px; border-radius:8px; border:none; font-size:13.5px; font-weight:600;
+    font-family:'Inter',sans-serif; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+    transition:transform .12s ease, filter .12s ease, background .12s ease;
+  }
+  .btn svg{ width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2; }
+  .btn:active{ transform:scale(0.98); }
+  .btn:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; }
+
+  .btn-row{ display:flex; gap:10px; margin-bottom:10px; }
+  .btn-admin{ background:var(--navy-deep); color:#F5F3EC; }
+  .btn-admin:hover{ background:#0d2c53; }
+  .btn-dashboard{ background:var(--brass); color:var(--navy-deep); }
+  .btn-dashboard:hover{ filter:brightness(1.05); }
+  .btn-ghost{ background:#fff; color:var(--navy-mid); border:1px solid var(--paper-dim); }
+  .btn-ghost:hover{ background:var(--paper); border-color:var(--slate); }
+
+  @media (max-width:480px){
+    .ticket-head{ padding:24px 22px 22px; }
+    .ticket-body{ padding:24px 22px 22px; }
+    .btn-row{ flex-direction:column; }
+  }
+
+  /* PERSONAL INFORMATION STEP — same ticket shell, wider for a two-column form */
+  .ticket.wide{ max-width:600px; }
+  .hidden{ display:none !important; }
+  .ticket.hidden{ display:none; }
+
+  .field-grid{ display:grid; grid-template-columns:1fr 1fr; column-gap:20px; }
+  .field-grid .field{ margin-bottom:16px; }
+
+  .sex-row{ display:flex; align-items:center; gap:22px; margin-bottom:26px; }
+  .sex-row > span{ font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--slate); }
+  .radio-opt{ display:flex; align-items:center; gap:8px; font-size:13.5px; color:var(--ink); cursor:pointer; }
+  .radio-opt input[type=radio]{ accent-color:var(--brass); width:16px; height:16px; margin:0; }
+
+  .btn-next{ background:var(--navy-deep); color:#F5F3EC; }
+  .btn-next:hover{ background:#0d2c53; }
+  .btn-next svg{ width:15px; height:15px; }
+
+  .step-label{
+    font-size:10.5px; color:var(--brass-soft); text-transform:uppercase; letter-spacing:0.14em;
+    text-align:center; margin-bottom:6px;
+  }
+
+  @media (max-width:480px){
+    .field-grid{ grid-template-columns:1fr; }
+  }
+
+  /* SELECT STAFF ROLE — step 3 */
+  .ticket.widest{ max-width:700px; }
+
+  /* SELECT COUNTER — step 4 */
+  .counter-icon{
+    width:72px; height:72px; border-radius:50%;
+    background:linear-gradient(135deg, #E8E53D, #D9D62A);
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:16px; box-shadow:0 8px 20px rgba(201,162,39,0.28);
+  }
+  .counter-icon svg{ width:32px; height:32px; stroke:#1C2430; fill:none; stroke-width:2.2; stroke-linecap:round; }
+
+  .counter-grid{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin:22px 0 26px; }
+  .counter-card{
+    border:1.5px solid var(--paper-dim); border-radius:12px; padding:22px 16px; text-align:center;
+    background:#fff; cursor:pointer; transition:all .15s ease; position:relative;
+  }
+  .counter-card:hover:not(.occupied){ border-color:var(--brass); box-shadow:0 6px 16px rgba(201,162,39,0.2); }
+  .counter-card.occupied{
+    background:#DEDEDE; border-color:#BFBFBF; cursor:not-allowed; opacity:0.72;
+  }
+  .counter-card.occupied:hover{ border-color:#BFBFBF; box-shadow:none; }
+  .counter-card.available{
+    background:#005FE6; border-color:#005FE6; color:#fff;
+  }
+  .counter-card.available:hover{ background:#0052C6; border-color:#0052C6; }
+  .counter-btn{ 
+    font-size:15px; font-weight:700; margin-bottom:8px;
+    color:inherit;
+  }
+  .counter-status{ font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:5px; }
+  .counter-status.occupied{ color:#B4602A; }
+  .counter-status.available{ color:#4FC85D; }
+  .counter-staff{ font-size:11px; color:#7A7A7A; }
+  .counter-card.available .counter-staff{ color:rgba(255,255,255,0.82); display:none; }
+
+  @media (max-width:720px){
+    .counter-grid{ grid-template-columns:1fr 1fr; }
+  }
+  @media (max-width:480px){
+    .counter-grid{ grid-template-columns:1fr; }
+    .ticket.widest{ max-width:100%; }
+  }
+
+  .role-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:22px 0 26px; }
+  .role-card{
+    border:1.5px solid var(--paper-dim); border-radius:12px; padding:26px 20px 20px;
+    text-align:center; background:#fff; cursor:pointer;
+    transition:border-color .15s ease, box-shadow .15s ease, transform .1s ease;
+  }
+  .role-card:hover{ border-color:#D8CDA8; }
+  .role-card.selected{ border-color:var(--brass); box-shadow:0 0 0 3px rgba(201,162,39,0.16); }
+  .role-card:active{ transform:scale(0.99); }
+
+  .role-icon{
+    width:52px; height:52px; margin:0 auto 16px; border-radius:12px;
+    background:var(--paper-dim); display:flex; align-items:center; justify-content:center;
+  }
+  .role-card.selected .role-icon{ background:rgba(201,162,39,0.16); }
+  .role-icon svg{ width:24px; height:24px; stroke:var(--navy-mid); fill:none; stroke-width:1.8; }
+  .role-card.selected .role-icon svg{ stroke:var(--brass); }
+
+  .role-card h3{ font-family:'Fraunces',serif; font-size:17px; font-weight:600; color:var(--ink); margin:0 0 6px; }
+  .role-card p{ font-size:12px; color:var(--slate); margin:0 0 18px; line-height:1.4; }
+
+  .role-select-btn{
+    width:100%; padding:9px; border-radius:8px; border:1px solid var(--paper-dim); background:var(--paper);
+    font-size:12.5px; font-weight:600; color:var(--slate); display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .role-card.selected .role-select-btn{ border-color:var(--brass); background:rgba(201,162,39,0.1); color:var(--navy-deep); }
+  .role-dot{ width:13px; height:13px; border-radius:50%; border:2px solid #C9C4B4; flex-shrink:0; }
+  .role-card.selected .role-dot{ border-color:var(--brass); background:var(--brass); }
+
+  .role-error{ display:none; text-align:center; font-size:11.5px; color:var(--warn); margin:-10px 0 16px; }
+  .role-error.show{ display:block; }
+
+  @media (max-width:480px){
+    .role-grid{ grid-template-columns:1fr; }
+  }
+
+  /* ===== STAFF PORTAL (scoped under #staffPortalView) ===== */
+#staffPortalView{
+    --blue:#4A5FE0;
+    --blue-deep:#3B4CC9;
+    --purple:#7C6ECE;
+    --purple-bg:#EDEBFA;
+    --green:#3FB765;
+    --green-bg:#E5F7EA;
+    --pink:#D6538C;
+    --orange:#E8933A;
+    --ink:#151A2B;
+    --slate:#6B7280;
+    --line:#E7E8EE;
+    --paper:#FAFAFC;
+    --radius:14px;
+  }
+#staffPortalView *{box-sizing:border-box;}
+#staffPortalView{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+  }
+#staffPortalView button{font-family:inherit;}
+#staffPortalView header{
+    background:linear-gradient(120deg, var(--blue), var(--blue-deep));
+    padding:22px 32px; display:flex; justify-content:space-between; align-items:center;
+    box-shadow:0 1px 0 rgba(0,0,0,0.06);
+  }
+#staffPortalView .htitle{font-family:'Fraunces',serif; color:#fff; font-size:26px; font-weight:700; margin:0; letter-spacing:-0.01em;}
+#staffPortalView .hsub{color:rgba(255,255,255,0.82); font-size:13.5px; margin:2px 0 0;}
+#staffPortalView .hactions{display:flex; align-items:center; gap:20px; position:relative;}
+#staffPortalView .hicon{
+    width:38px; height:38px; border-radius:9px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; transition:background .15s ease; color:#fff;
+  }
+#staffPortalView .hicon:hover{background:rgba(255,255,255,0.14);}
+#staffPortalView .hicon svg{width:21px; height:21px;}
+#staffPortalView .dropdown{
+    position:absolute; top:48px; right:0; background:#fff; border:1px solid var(--line);
+    border-radius:10px; box-shadow:0 12px 28px rgba(15,20,45,0.16); min-width:190px;
+    padding:6px; display:none; z-index:40;
+  }
+#staffPortalView .dropdown.open{display:block;}
+#staffPortalView .dropdown-item{
+    padding:10px 12px; font-size:13.5px; color:var(--ink); border-radius:7px; cursor:pointer;
+    display:flex; align-items:center; gap:9px; font-weight:500;
+  }
+#staffPortalView .dropdown-item:hover{background:var(--paper);}
+#staffPortalView .dropdown-item svg{width:15px; height:15px; color:var(--slate);}
+#staffPortalView .dropdown-divider{height:1px; background:var(--line); margin:5px 4px;}
+#staffPortalView .dropdown-item.danger{color:#C0392B; cursor:pointer;}
+#staffPortalView .dropdown-user{padding:10px 12px 8px;}
+#staffPortalView .dropdown-user-name{font-size:13.5px; font-weight:700; color:var(--ink);}
+#staffPortalView .dropdown-user-meta{font-size:11.5px; color:var(--slate); margin-top:2px;}
+#staffPortalView main{max-width:1280px; margin:0 auto; padding:26px 32px 60px;}
+#staffPortalView .tabs{display:flex; gap:36px; border-bottom:1px solid var(--line); margin-bottom:26px;}
+#staffPortalView .tab{
+    font-size:16px; font-weight:600; color:#A1A6B4; padding:0 0 14px; cursor:pointer;
+    border-bottom:3px solid transparent; transition:color .15s ease;
+  }
+#staffPortalView .tab:hover{color:var(--ink);}
+#staffPortalView .tab.active{color:var(--ink); border-bottom-color:var(--blue);}
+#staffPortalView .view{display:none;}
+#staffPortalView .view.active{display:block;}
+#staffPortalView .top-grid{display:grid; grid-template-columns:1fr 1.5fr; gap:16px; margin-bottom:20px;}
+#staffPortalView .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+#staffPortalView .card{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:20px;
+  }
+#staffPortalView .stat-icon{width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; margin-bottom:14px;}
+#staffPortalView .stat-icon svg{width:19px; height:19px;}
+#staffPortalView .stat-icon.pink{background:#FBE7EF; color:var(--pink);}
+#staffPortalView .stat-icon.green{background:var(--green-bg); color:var(--green);}
+#staffPortalView .stat-icon.blue{background:#E7EAFB; color:var(--blue);}
+#staffPortalView .stat-icon.orange{background:#FBEBD9; color:var(--orange);}
+#staffPortalView .stat-value{font-family:'Fraunces',serif; font-size:32px; font-weight:700; line-height:1;}
+#staffPortalView .stat-value small{font-size:15px; font-weight:600; color:var(--slate); margin-left:2px;}
+#staffPortalView .stat-label{font-size:13.5px; color:var(--slate); margin-top:6px; font-weight:500;}
+#staffPortalView .cal-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;}
+#staffPortalView .cal-nav{
+    width:28px; height:28px; border-radius:7px; border:1px solid var(--line); background:#fff;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--slate);
+    transition:all .15s ease;
+  }
+#staffPortalView .cal-nav:hover{background:var(--paper); color:var(--ink);}
+#staffPortalView .cal-nav svg{width:15px; height:15px;}
+#staffPortalView .cal-title{font-family:'Fraunces',serif; font-size:16px; font-weight:700;}
+#staffPortalView .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center;}
+#staffPortalView .cal-dow{font-size:10.5px; font-weight:700; color:#A1A6B4; text-transform:uppercase; letter-spacing:0.06em; padding-bottom:8px;}
+#staffPortalView .cal-day{
+    font-size:13.5px; font-weight:500; padding:9px 0; border-radius:8px; cursor:pointer; color:var(--ink);
+    transition:all .15s ease;
+  }
+#staffPortalView .cal-day:hover{background:var(--paper);}
+#staffPortalView .cal-day.muted{color:#D5D7DF; cursor:default;}
+#staffPortalView .cal-day.muted:hover{background:transparent;}
+#staffPortalView .cal-day.selected{background:var(--blue); color:#fff; font-weight:700;}
+#staffPortalView .cal-day.today:not(.selected){box-shadow:inset 0 0 0 1.5px var(--blue); color:var(--blue); font-weight:700;}
+#staffPortalView .section-card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px; margin-bottom:20px;}
+#staffPortalView .section-head{display:flex; align-items:center; gap:10px; margin-bottom:2px;}
+#staffPortalView .section-head .icon{width:20px; height:20px; color:var(--blue);}
+#staffPortalView .section-title{font-family:'Fraunces',serif; font-size:16.5px; font-weight:700; margin:0;}
+#staffPortalView .section-sub{font-size:12.5px; color:var(--slate); margin:4px 0 18px 30px;}
+#staffPortalView .bottom-grid{display:grid; grid-template-columns:1.15fr 1fr; gap:20px;}
+#staffPortalView .queue-split{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+#staffPortalView .queue-col{border:1px solid var(--line); border-radius:11px; padding:16px;}
+#staffPortalView .queue-col-label{font-size:11.5px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:12px;}
+#staffPortalView .now-serving-tag{font-size:11px; font-weight:600; color:var(--slate); text-align:center; margin-bottom:8px;}
+#staffPortalView .ticket-num{
+    font-family:'JetBrains Mono',monospace; font-size:19px; font-weight:700; text-align:center;
+    padding:13px; border-radius:8px; margin-bottom:14px; letter-spacing:0.02em;
+  }
+#staffPortalView .ticket-num.purple{background:var(--purple-bg); color:var(--purple);}
+#staffPortalView .ticket-num.green{background:var(--green-bg); color:#2A9550;}
+#staffPortalView .waiting-row{display:flex; align-items:center; gap:9px; padding-top:12px; border-top:1px solid var(--line);}
+#staffPortalView .waiting-row svg{width:17px; height:17px; color:var(--blue); flex-shrink:0;}
+#staffPortalView .waiting-text{font-size:12.5px; color:var(--slate);}
+#staffPortalView .waiting-count{font-size:20px; font-weight:700; color:var(--ink); display:block; font-family:'Fraunces',serif;}
+#staffPortalView .peak-split{display:flex; flex-direction:column; gap:22px;}
+#staffPortalView .peak-block-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;}
+#staffPortalView .peak-label{font-size:12.5px; font-weight:600; color:var(--slate);}
+#staffPortalView .peak-badge{font-size:11.5px; font-weight:700; color:var(--blue-deep); background:#E7EAFB; padding:5px 11px; border-radius:20px;}
+#staffPortalView .bar-chart{display:flex; align-items:flex-end; gap:10px; height:110px;}
+#staffPortalView .bar-wrap{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%;}
+#staffPortalView .bar-val{font-size:11px; font-weight:700; color:var(--ink); margin-bottom:5px;}
+#staffPortalView .bar{width:100%; max-width:30px; border-radius:5px 5px 0 0; background:#C7CDF5; transition:height .5s ease;}
+#staffPortalView .bar.peak{background:var(--blue-deep);}
+#staffPortalView .bar-xlabel{font-size:10.5px; color:var(--slate); margin-top:7px; font-weight:600;}
+#staffPortalView .placeholder{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:60px 30px;
+    text-align:center; color:var(--slate);
+  }
+#staffPortalView .placeholder .picon{width:46px; height:46px; margin:0 auto 16px; color:#C7CDF5;}
+#staffPortalView .placeholder h3{font-family:'Fraunces',serif; color:var(--ink); font-size:19px; margin:0 0 6px;}
+#staffPortalView .placeholder p{font-size:13.5px; margin:0; max-width:360px; margin-inline:auto;}
+/* QUEUE PAGE */
+#staffPortalView .counter-tabs{display:flex; justify-content:center; margin-bottom:26px;}
+#staffPortalView .counter-tab{
+  padding:12px 26px; border-radius:9px; font-size:14px; font-weight:600; cursor:default;
+  border:1px solid var(--line); background:#F0F1F5; color:#A1A6B4; transition:all .15s ease;
+}
+#staffPortalView .counter-tab.qactive{background:var(--blue); border-color:var(--blue); color:#fff; box-shadow:0 6px 16px rgba(74,95,224,0.3);}
+
+#staffPortalView .queue-main-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;}
+
+#staffPortalView .serving-card{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:#fff;}
+#staffPortalView .serving-head{
+  background:linear-gradient(120deg, var(--blue), var(--blue-deep)); padding:18px 22px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+#staffPortalView .serving-head h3{margin:0; font-family:'Fraunces',serif; color:#fff; font-size:19px; font-weight:700;}
+#staffPortalView .serving-head p{margin:2px 0 0; color:rgba(255,255,255,0.82); font-size:12.5px;}
+#staffPortalView .btn-close-counter{
+  background:rgba(255,255,255,0.16); border:1px solid rgba(255,255,255,0.3); color:#fff; border-radius:8px;
+  padding:9px 16px; font-size:12.5px; font-weight:600; cursor:pointer; transition:background .15s ease; white-space:nowrap;
+}
+#staffPortalView .btn-close-counter:hover{background:rgba(255,255,255,0.26);}
+#staffPortalView .btn-close-counter.reopen{background:#fff; color:var(--blue-deep);}
+
+#staffPortalView .serving-body{background:#F2F2F5; padding:36px 22px; text-align:center; min-height:220px; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+#staffPortalView .serving-ticket-num{font-family:'Fraunces',serif; font-size:52px; font-weight:800; color:var(--ink); line-height:1; letter-spacing:-0.01em;}
+#staffPortalView .serving-name{font-size:15px; color:var(--slate); margin-top:10px; font-weight:500;}
+#staffPortalView .serving-empty{color:#A1A6B4; font-size:14px; font-weight:500;}
+#staffPortalView .serving-actions{display:flex; gap:12px; margin-top:22px;}
+#staffPortalView .btn-hold{
+  background:#fff; border:1.5px solid var(--line); color:var(--ink); border-radius:9px; padding:11px 26px;
+  font-size:13.5px; font-weight:700; cursor:pointer; transition:all .15s ease;
+}
+#staffPortalView .btn-hold:hover{border-color:#C7CDF5; background:#FAFAFC;}
+#staffPortalView .btn-complete{
+  background:var(--green); border:1.5px solid var(--green); color:#fff; border-radius:9px; padding:11px 30px;
+  font-size:13.5px; font-weight:700; cursor:pointer; transition:background .15s ease;
+}
+#staffPortalView .btn-complete:hover{background:#34A257;}
+#staffPortalView .serving-actions button:disabled{opacity:0.45; cursor:not-allowed;}
+
+#staffPortalView .waiting-card{border:1px solid var(--line); border-radius:var(--radius); background:#fff; padding:22px; display:flex; flex-direction:column;}
+#staffPortalView .waiting-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:16px; flex-wrap:wrap;}
+#staffPortalView .waiting-head h3{margin:0; font-family:'Fraunces',serif; font-size:19px; font-weight:700;}
+#staffPortalView .waiting-head p{margin:2px 0 0; font-size:12.5px; color:var(--slate);}
+#staffPortalView .waiting-head-actions{display:flex; gap:10px; flex-wrap:wrap;}
+#staffPortalView .btn-onhold{
+  background:#F2C94C; border:1px solid #F2C94C; color:#5A4200; border-radius:8px; padding:9px 16px;
+  font-size:12.5px; font-weight:700; cursor:pointer; transition:filter .15s ease; position:relative;
+}
+#staffPortalView .btn-onhold:hover{filter:brightness(0.95);}
+#staffPortalView .btn-onhold.qactive{background:#5A4200; color:#F2C94C; border-color:#5A4200;}
+#staffPortalView .onhold-count{
+  display:inline-flex; align-items:center; justify-content:center; min-width:16px; height:16px; padding:0 4px;
+  border-radius:10px; background:#5A4200; color:#F2C94C; font-size:10px; font-weight:800; margin-left:6px;
+}
+#staffPortalView .btn-onhold.qactive .onhold-count{background:#F2C94C; color:#5A4200;}
+#staffPortalView .btn-txn-limit{
+  background:#fff; border:1px solid var(--line); color:var(--ink); border-radius:8px; padding:9px 16px;
+  font-size:12.5px; font-weight:600; cursor:pointer; transition:all .15s ease; white-space:nowrap;
+}
+#staffPortalView .btn-txn-limit:hover{background:var(--paper); border-color:#D5D7DF;}
+
+#staffPortalView .waiting-list{flex:1; display:flex; flex-direction:column; gap:10px; margin-bottom:16px; min-height:70px;}
+#staffPortalView .waiting-row-item{
+  display:flex; align-items:center; gap:12px; border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+  transition:border-color .15s ease;
+}
+#staffPortalView .waiting-row-item:hover{border-color:#C7CDF5;}
+#staffPortalView .waiting-pos{
+  width:28px; height:28px; border-radius:7px; border:1px solid var(--line); display:flex; align-items:center;
+  justify-content:center; font-size:11.5px; font-weight:700; color:var(--slate); flex-shrink:0;
+}
+#staffPortalView .waiting-item-info{flex:1;}
+#staffPortalView .waiting-item-ticket{font-weight:700; font-size:13.5px; color:var(--ink);}
+#staffPortalView .waiting-item-name{font-size:12px; color:var(--slate); margin-top:1px;}
+#staffPortalView .waiting-item-time{font-size:12px; color:var(--slate); font-weight:500; white-space:nowrap;}
+#staffPortalView .waiting-item-resume{
+  background:none; border:1px solid var(--line); border-radius:7px; padding:6px 12px; font-size:11.5px;
+  font-weight:600; color:var(--blue-deep); cursor:pointer; transition:all .15s ease; white-space:nowrap;
+}
+#staffPortalView .waiting-item-resume:hover{background:#E7EAFB; border-color:#C7CDF5;}
+#staffPortalView .waiting-list-empty{color:#A1A6B4; font-size:13px; text-align:center; padding:24px 10px;}
+
+#staffPortalView .btn-call-next{
+  width:100%; background:var(--blue); border:none; color:#fff; border-radius:9px; padding:13px; font-size:13.5px;
+  font-weight:700; cursor:pointer; transition:background .15s ease;
+}
+#staffPortalView .btn-call-next:hover:not(:disabled){background:var(--blue-deep);}
+#staffPortalView .btn-call-next:disabled{background:#D5D7DF; color:#fff; cursor:not-allowed;}
+
+#staffPortalView .history-card{border:1px solid var(--line); border-radius:var(--radius); background:#fff; padding:22px;}
+#staffPortalView .history-card h3{margin:0; font-family:'Fraunces',serif; font-size:19px; font-weight:700;}
+#staffPortalView .history-card p{margin:2px 0 18px; font-size:12.5px; color:var(--slate);}
+#staffPortalView table.history-table{width:100%; border-collapse:collapse;}
+#staffPortalView .history-table th{
+  text-align:left; font-size:11.5px; font-weight:600; color:var(--slate); padding:10px 14px; border-bottom:1px solid var(--line);
+}
+#staffPortalView .history-table td{padding:14px; font-size:13px; color:var(--ink); border-bottom:1px solid var(--line);}
+#staffPortalView .history-table tr:last-child td{border-bottom:none;}
+#staffPortalView .history-status{font-size:11px; font-weight:700; padding:4px 11px; border-radius:20px; display:inline-block;}
+#staffPortalView .history-status.completed{background:var(--green-bg); color:#2A9550;}
+#staffPortalView .history-status.held{background:#FDF3D6; color:#8A6D00;}
+#staffPortalView .history-status.cancelled{background:#FBE7E7; color:#C0392B;}
+#staffPortalView .history-empty-row td{text-align:center; color:#A1A6B4; padding:26px;}
+
+@media (max-width:900px){
+#staffPortalView .queue-main-grid{grid-template-columns:1fr;}
+}
+@media (max-width:480px){
+#staffPortalView .counter-tabs{flex-wrap:wrap;}
+#staffPortalView .serving-ticket-num{font-size:40px;}
+}
+
+@media (max-width:960px){
+#staffPortalView .top-grid{grid-template-columns:1fr;}
+#staffPortalView .bottom-grid{grid-template-columns:1fr;}
+#staffPortalView .stat-grid{grid-template-columns:1fr 1fr;}
+}
+
+@media (max-width:600px){
+#staffPortalView header{padding:18px 20px;}
+#staffPortalView main{padding:20px 16px 50px;}
+#staffPortalView .stat-grid{grid-template-columns:1fr;}
+#staffPortalView .queue-split{grid-template-columns:1fr;}
+#staffPortalView .tabs{gap:22px;}
+}
+
+/* ============================================================
+   ADMIN LOGIN VIEW — recreated from provided screenshot.
+   Deliberately its own visual language (not the navy/brass ticket
+   theme) since it mirrors a distinct reference design exactly.
+   ============================================================ */
+#adminLoginView{
+  position:fixed; inset:0; z-index:500;
+  background:#0A1F3F;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+}
+#adminLoginView.hidden{ display:none !important; }
+
+#adminLoginView .admin-card{
+  width:100%; max-width:432px;
+  background:#ffffff;
+  border-radius:26px;
+  box-shadow:0 22px 45px rgba(20,14,28,0.28);
+  padding:44px 42px 38px;
+  font-family:'Inter',sans-serif;
+}
+
+#adminLoginView .admin-icon{
+  width:64px; height:64px; border-radius:50%; margin:0 auto 20px;
+  background:radial-gradient(circle at 32% 28%, #1D4380, #0A1F3F 70%);
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 8px 18px rgba(10,31,63,0.35);
+}
+#adminLoginView .admin-icon svg{ width:26px; height:26px; stroke:#fff; fill:none; stroke-width:2; }
+
+#adminLoginView h1{
+  text-align:center; font-family:'Inter',sans-serif; font-weight:800;
+  font-size:26px; color:#0A1F3F; margin:0 0 34px;
+  letter-spacing:-0.01em;
+}
+
+#adminLoginView .admin-field{
+  display:flex; align-items:center; gap:14px; margin-bottom:16px;
+}
+#adminLoginView .admin-field label{
+  flex:0 0 92px; font-size:14px; font-weight:500; color:#2B2B33;
+}
+#adminLoginView .admin-field input{
+  flex:1; min-width:0; padding:10px 13px; font-size:13.5px;
+  font-family:'Inter',sans-serif; color:#1C2430;
+  background:#fff; border:1px solid #D7D6DC; border-radius:6px; outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+#adminLoginView .admin-field input::placeholder{ color:#AFAEB6; }
+#adminLoginView .admin-field input:focus{ border-color:#14305E; box-shadow:0 0 0 3px rgba(20,48,94,0.18); }
+#adminLoginView .admin-field input.invalid{ border-color:#C0392B; box-shadow:0 0 0 3px rgba(192,57,43,0.14); }
+
+#adminLoginView .admin-error{
+  display:none; font-size:11.5px; color:#C0392B; font-weight:500;
+  margin:-6px 0 14px 106px;
+}
+#adminLoginView .admin-error.show{ display:block; }
+
+#adminLoginView .admin-btn-row{
+  display:flex; gap:14px; margin-top:26px;
+}
+#adminLoginView .admin-btn{
+  flex:1; padding:12px 10px; border:none; border-radius:8px;
+  font-family:'Inter',sans-serif; font-size:14px; font-weight:600; color:#fff;
+  cursor:pointer; transition:filter .12s ease, transform .12s ease;
+}
+#adminLoginView .admin-btn:active{ transform:scale(0.98); }
+#adminLoginView .admin-btn-staff{ background:#14305E; }
+#adminLoginView .admin-btn-staff:hover{ filter:brightness(1.08); }
+#adminLoginView .admin-btn-go{ background:#C9A227; color:#0A1F3F; }
+#adminLoginView .admin-btn-go:hover{ filter:brightness(1.08); }
+
+@media (max-width:480px){
+  #adminLoginView .admin-card{ padding:36px 26px 30px; }
+  #adminLoginView .admin-field{ flex-direction:column; align-items:stretch; gap:6px; }
+  #adminLoginView .admin-field label{ flex:none; }
+  #adminLoginView .admin-error{ margin-left:0; }
+  #adminLoginView .admin-btn-row{ flex-direction:column; }
+}
+
+/* ============================================================
+   ADMIN DASHBOARD OVERVIEW — recreated from provided screenshot.
+   Own visual language (pink header, black-bordered cards) to
+   match the reference exactly; scoped under #adminDashboardView.
+   ============================================================ */
+#adminDashboardView{
+  position:fixed; inset:0; z-index:400; background:#fff;
+  overflow-y:auto; font-family:'Inter',sans-serif; color:#151519;
+}
+#adminDashboardView.hidden{ display:none !important; }
+#adminDashboardView *{ box-sizing:border-box; }
+
+#adminDashboardView .ad-header{
+  background:#0A1F3F;
+  border-bottom:4px solid #C9A227;
+  padding:26px 40px;
+  display:flex; align-items:flex-start; justify-content:space-between;
+}
+#adminDashboardView .ad-htitle{ font-size:26px; font-weight:800; color:#FFFFFF; margin:0; letter-spacing:-0.01em; }
+#adminDashboardView .ad-hsub{ font-size:14px; color:#E8C766; margin:4px 0 0; font-weight:500; }
+#adminDashboardView .ad-hactions{ display:flex; align-items:center; gap:14px; }
+#adminDashboardView .ad-hicon-wrap{ position:relative; }
+#adminDashboardView .ad-hicon{
+  width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.12); color:#FFFFFF; cursor:pointer; border:none; transition:background .15s ease;
+}
+#adminDashboardView .ad-hicon:hover{ background:rgba(255,255,255,0.24); }
+#adminDashboardView .ad-hicon svg{ width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:2; }
+
+#adminDashboardView .ad-hdropdown{
+  position:absolute; top:48px; right:0; background:#fff; border:1px solid #E4E3E8;
+  border-radius:10px; box-shadow:0 12px 28px rgba(15,20,45,0.16); min-width:180px;
+  padding:6px; display:none; z-index:40;
+}
+#adminDashboardView .ad-hdropdown.open{ display:block; }
+#adminDashboardView .ad-hdropdown-user{ padding:10px 12px 8px; }
+#adminDashboardView .ad-hdropdown-name{ font-size:13.5px; font-weight:700; color:#15121A; }
+#adminDashboardView .ad-hdropdown-meta{ font-size:11.5px; color:#8C8A95; margin-top:2px; }
+#adminDashboardView .ad-hdropdown-divider{ height:1px; background:#EFEEF2; margin:5px 4px; }
+#adminDashboardView .ad-hdropdown-item{
+  padding:10px 12px; font-size:13.5px; color:#15121A; border-radius:7px; cursor:pointer;
+  display:flex; align-items:center; gap:9px; font-weight:500;
+}
+#adminDashboardView .ad-hdropdown-item:hover{ background:#F6F2EA; }
+#adminDashboardView .ad-hdropdown-item svg{ width:15px; height:15px; color:#8C8A95; stroke:currentColor; fill:none; stroke-width:2; flex-shrink:0; }
+#adminDashboardView .ad-hdropdown-item.danger{ color:#E4364C; }
+#adminDashboardView .ad-hdropdown-item.danger svg{ color:#E4364C; }
+
+#adminDashboardView .ad-main{ max-width:1240px; margin:0 auto; padding:28px 40px 60px; }
+
+#adminDashboardView .ad-tabs{ display:flex; gap:34px; border-bottom:1px solid #E4E3E8; margin-bottom:26px; }
+#adminDashboardView .ad-tab{
+  padding:0 0 14px; font-size:19px; font-weight:600; color:#A7A6AF; background:none; border:none;
+  border-bottom:2.5px solid transparent; cursor:pointer; font-family:'Inter',sans-serif;
+}
+#adminDashboardView .ad-tab:hover{ color:#4A4750; }
+#adminDashboardView .ad-tab.active{ color:#0A1F3F; font-weight:700; border-bottom-color:#C9A227; }
+
+#adminDashboardView .ad-panel{ display:none; }
+#adminDashboardView .ad-panel.active{ display:block; }
+
+#adminDashboardView .ad-top-grid{ display:grid; grid-template-columns:1fr 1.35fr; gap:18px; margin-bottom:18px; }
+#adminDashboardView .ad-stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+#adminDashboardView .ad-card{
+  background:#fff; border:1.5px solid #14305E; border-radius:12px; padding:20px 22px;
+}
+#adminDashboardView .ad-stat-icon{ width:24px; height:24px; margin-bottom:16px; }
+#adminDashboardView .ad-stat-icon svg{ width:100%; height:100%; stroke-width:1.8; fill:none; }
+#adminDashboardView .ad-stat-icon.pink{ color:#14305E; }
+#adminDashboardView .ad-stat-icon.purple{ color:#9A7410; }
+#adminDashboardView .ad-stat-icon.blue{ color:#1D4380; }
+#adminDashboardView .ad-stat-icon.orange{ color:#C9A227; }
+#adminDashboardView .ad-stat-value{ font-size:32px; font-weight:800; line-height:1; letter-spacing:-0.01em; }
+#adminDashboardView .ad-stat-value small{ font-size:16px; font-weight:600; color:#8C8A95; margin-left:1px; }
+#adminDashboardView .ad-stat-label{ font-size:14px; color:#5A5760; margin-top:8px; font-weight:500; }
+
+#adminDashboardView .ad-cal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+#adminDashboardView .ad-cal-nav{
+  width:26px; height:26px; border-radius:6px; border:none; background:none; color:#5A5760;
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+}
+#adminDashboardView .ad-cal-nav:hover{ background:#F3F2F5; color:#15121A; }
+#adminDashboardView .ad-cal-nav svg{ width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:2.2; }
+#adminDashboardView .ad-cal-title{ font-size:16.5px; font-weight:700; }
+#adminDashboardView .ad-cal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center; }
+#adminDashboardView .ad-cal-dow{ font-size:10.5px; font-weight:700; color:#A1A0AA; text-transform:uppercase; letter-spacing:0.06em; padding-bottom:10px; }
+#adminDashboardView .ad-cal-day{
+  padding:8px 0; font-size:13.5px; font-weight:500; color:#15121A; border-radius:50%; cursor:pointer;
+  transition:background .12s ease;
+}
+#adminDashboardView .ad-cal-day:hover{ background:#F3F2F5; }
+#adminDashboardView .ad-cal-day.muted{ color:#D5D4DA; cursor:default; }
+#adminDashboardView .ad-cal-day.muted:hover{ background:transparent; }
+#adminDashboardView .ad-cal-day.selected{ background:#14305E; color:#FFFFFF; font-weight:700; }
+#adminDashboardView .ad-cal-day.today:not(.selected){ box-shadow:inset 0 0 0 1.5px #C9A227; color:#9A7410; font-weight:700; }
+
+#adminDashboardView .ad-bottom-grid{ display:grid; grid-template-columns:1.1fr 1fr; gap:18px; }
+
+#adminDashboardView .ad-section-head{ display:flex; align-items:center; gap:9px; margin-bottom:2px; }
+#adminDashboardView .ad-section-head .icon{ width:19px; height:19px; color:#14305E; flex-shrink:0; }
+#adminDashboardView .ad-section-head.blue .icon{ color:#1D4380; }
+#adminDashboardView .ad-section-title{ font-size:16px; font-weight:700; margin:0; }
+#adminDashboardView .ad-section-sub{ font-size:12.5px; color:#8C8A95; margin:4px 0 18px 28px; }
+
+#adminDashboardView .ad-queue-split{ display:grid; grid-template-columns:1fr 1fr; gap:0; border:1px solid #E4E3E8; border-radius:11px; overflow:hidden; margin-bottom:16px; }
+#adminDashboardView .ad-queue-col{ padding:14px 16px; }
+#adminDashboardView .ad-queue-col:first-child{ border-right:1px solid #E4E3E8; }
+#adminDashboardView .ad-queue-col-label{ font-size:11px; font-weight:700; color:#5A5760; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px; text-align:left; }
+#adminDashboardView .ad-now-serving-tag{ font-size:11px; font-weight:600; color:#8C8A95; text-align:center; margin-bottom:8px; }
+#adminDashboardView .ad-ticket-num{
+  display:block; margin:0 auto; text-align:center; font-size:22px; font-weight:800; padding:9px 0;
+  border-radius:9px; font-family:'JetBrains Mono',monospace;
+}
+#adminDashboardView .ad-ticket-num.purple{ background:#EDE4FC; color:#6E33D6; }
+#adminDashboardView .ad-ticket-num.green{ background:#DFF3E5; color:#1E9E4E; }
+
+#adminDashboardView .ad-waiting-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+#adminDashboardView .ad-waiting-col{ border:1px solid #E4E3E8; border-radius:11px; padding:14px 16px; display:flex; align-items:center; gap:10px; }
+#adminDashboardView .ad-waiting-col svg{ width:17px; height:17px; color:#14305E; flex-shrink:0; }
+#adminDashboardView .ad-waiting-text{ font-size:12.5px; color:#5A5760; }
+#adminDashboardView .ad-waiting-count{ font-size:20px; font-weight:800; display:block; }
+#adminDashboardView .ad-waiting-count small{ font-size:12px; font-weight:500; color:#8C8A95; }
+
+#adminDashboardView .ad-peak-split{ display:flex; flex-direction:column; gap:24px; }
+#adminDashboardView .ad-peak-block-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+#adminDashboardView .ad-peak-label{ font-size:12.5px; font-weight:600; color:#5A5760; }
+#adminDashboardView .ad-peak-badge{ font-size:11.5px; font-weight:700; color:#3A4FC9; background:#E7EAFB; padding:5px 11px; border-radius:20px; }
+#adminDashboardView .ad-bar-chart{ display:flex; align-items:flex-end; gap:10px; height:110px; }
+#adminDashboardView .ad-bar-wrap{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+#adminDashboardView .ad-bar-val{ font-size:11px; font-weight:700; color:#15121A; margin-bottom:5px; }
+#adminDashboardView .ad-bar{ width:100%; max-width:30px; border-radius:5px 5px 0 0; background:#C7CDF5; transition:height .5s ease; }
+#adminDashboardView .ad-bar.peak{ background:#3A4FC9; }
+#adminDashboardView .ad-bar-xlabel{ font-size:10.5px; color:#8C8A95; margin-top:7px; font-weight:600; }
+
+#adminDashboardView .ad-placeholder{
+  border:1.5px solid #14305E; border-radius:12px; padding:70px 30px; text-align:center; color:#8C8A95;
+}
+#adminDashboardView .ad-placeholder .picon{ width:44px; height:44px; margin:0 auto 16px; color:#D5D4DA; }
+#adminDashboardView .ad-placeholder h3{ color:#15121A; font-size:18px; margin:0 0 6px; }
+#adminDashboardView .ad-placeholder p{ font-size:13.5px; margin:0; max-width:360px; margin-inline:auto; }
+
+/* ============================================================
+   STAFF MANAGEMENT — recreated from provided screenshot.
+   Reuses the admin dashboard's black-border-card language.
+   ============================================================ */
+#adminDashboardView .ad-staff-card{
+  border:1.5px solid #14305E; border-radius:14px; padding:28px 30px 30px; background:#fff;
+}
+#adminDashboardView .ad-staff-head{ display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:22px; }
+#adminDashboardView .ad-staff-title{ font-size:24px; font-weight:800; margin:0 0 4px; letter-spacing:-0.01em; color:#15121A; }
+#adminDashboardView .ad-staff-sub{ font-size:13.5px; color:#8C8A95; margin:0; font-weight:500; }
+#adminDashboardView .ad-staff-addbtn{
+  background:#14305E; color:#fff; border:none; border-radius:9px; padding:12px 22px; font-size:13.5px;
+  font-weight:700; font-family:'Inter',sans-serif; cursor:pointer; transition:background .15s ease; flex-shrink:0;
+}
+#adminDashboardView .ad-staff-addbtn:hover{ background:#0A1F3F; }
+
+#adminDashboardView .ad-staff-toolbar{ display:flex; gap:14px; margin-bottom:18px; }
+#adminDashboardView .ad-staff-search{
+  flex:1; display:flex; align-items:center; gap:10px; background:#F6F2EA; border-radius:10px; padding:11px 16px;
+}
+#adminDashboardView .ad-staff-search svg{ width:17px; height:17px; color:#8C8A95; flex-shrink:0; }
+#adminDashboardView .ad-staff-search input{
+  border:none; background:none; outline:none; font-family:'Inter',sans-serif; font-size:13.5px; color:#15121A; width:100%;
+}
+#adminDashboardView .ad-staff-search input::placeholder{ color:#A7A6AF; }
+#adminDashboardView .ad-staff-filter{
+  position:relative; min-width:170px; display:flex; align-items:center;
+}
+#adminDashboardView .ad-staff-filter select{
+  appearance:none; -webkit-appearance:none; width:100%; border:1px solid #E4E3E8; border-radius:10px;
+  padding:11px 34px 11px 16px; font-family:'Inter',sans-serif; font-size:13.5px; color:#15121A; background:#fff; cursor:pointer;
+}
+#adminDashboardView .ad-staff-filter svg{ width:14px; height:14px; color:#5A5760; position:absolute; right:14px; pointer-events:none; }
+
+#adminDashboardView .ad-staff-tablewrap{ border:1px solid #E4E3E8; border-radius:12px; overflow:hidden; }
+#adminDashboardView table.ad-staff-table{ width:100%; border-collapse:collapse; }
+#adminDashboardView .ad-staff-table th{
+  text-align:left; font-size:11.5px; font-weight:700; color:#5A5760; text-transform:none; letter-spacing:0;
+  padding:14px 20px; background:#FAF9FB; border-bottom:1px solid #E4E3E8;
+}
+#adminDashboardView .ad-staff-table th.ad-staff-actioncol{ text-align:right; }
+#adminDashboardView .ad-staff-table td{ padding:16px 20px; font-size:13.5px; color:#15121A; border-bottom:1px solid #EFEEF2; vertical-align:middle; }
+#adminDashboardView .ad-staff-table tr:last-child td{ border-bottom:none; }
+#adminDashboardView .ad-staff-table tr:hover td{ background:#FBFAFD; }
+#adminDashboardView .ad-staff-name{ font-weight:600; }
+#adminDashboardView .ad-staff-email{ color:#14305E; text-decoration:underline; }
+#adminDashboardView .ad-staff-actioncol{ text-align:right; white-space:nowrap; }
+
+#adminDashboardView .ad-staff-pill{
+  display:inline-flex; align-items:center; font-size:11.5px; font-weight:700; color:#fff;
+  padding:5px 14px; border-radius:20px; letter-spacing:0.01em;
+}
+#adminDashboardView .ad-staff-pill.active{ background:#2FA84F; }
+#adminDashboardView .ad-staff-pill.deactivated{ background:#E4364C; }
+
+#adminDashboardView .ad-staff-icon-btn{
+  background:none; border:none; cursor:pointer; padding:5px; margin-left:6px; border-radius:6px; color:#4A4750;
+  display:inline-flex; align-items:center; justify-content:center; transition:background .12s ease;
+}
+#adminDashboardView .ad-staff-icon-btn:hover{ background:#F6F2EA; }
+#adminDashboardView .ad-staff-icon-btn svg{ width:17px; height:17px; stroke-width:1.8; fill:none; stroke:currentColor; }
+#adminDashboardView .ad-staff-icon-btn.lock{ color:#E4364C; }
+#adminDashboardView .ad-staff-icon-btn.unlock{ color:#E0A72B; }
+
+#adminDashboardView .ad-staff-empty{ text-align:center; padding:36px 20px; color:#8C8A95; font-size:13.5px; margin:0; }
+
+/* Add/Edit/View modal */
+#adminDashboardView .ad-staff-modal-overlay{
+  position:fixed; inset:0; z-index:500; background:rgba(21,18,26,0.45);
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+#adminDashboardView .ad-staff-modal-overlay[hidden]{ display:none; }
+#adminDashboardView .ad-staff-modal{
+  background:#fff; border-radius:14px; width:100%; max-width:400px; padding:26px 26px 22px;
+  box-shadow:0 20px 50px rgba(21,18,26,0.3);
+}
+#adminDashboardView .ad-staff-modal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+#adminDashboardView .ad-staff-modal-head h3{ font-size:18px; font-weight:800; margin:0; color:#15121A; }
+#adminDashboardView .ad-staff-modal-close{
+  background:none; border:none; font-size:22px; line-height:1; color:#8C8A95; cursor:pointer; padding:2px 6px; border-radius:6px;
+}
+#adminDashboardView .ad-staff-modal-close:hover{ background:#F6F2EA; color:#15121A; }
+#adminDashboardView .ad-staff-field{ margin-bottom:14px; }
+#adminDashboardView .ad-staff-field label{
+  display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#5A5760; margin-bottom:6px;
+}
+#adminDashboardView .ad-staff-field input, #adminDashboardView .ad-staff-field select{
+  width:100%; padding:10px 13px; font-family:'Inter',sans-serif; font-size:13.5px; color:#15121A;
+  background:#fff; border:1px solid #E4E3E8; border-radius:8px; outline:none;
+}
+#adminDashboardView .ad-staff-field input:focus, #adminDashboardView .ad-staff-field select:focus{
+  border-color:#14305E; box-shadow:0 0 0 3px rgba(20,48,94,0.16);
+}
+#adminDashboardView .ad-staff-field input:disabled, #adminDashboardView .ad-staff-field select:disabled{
+  background:#FAF9FB; color:#5A5760;
+}
+#adminDashboardView .ad-staff-modal-error{
+  font-size:12px; color:#E4364C; margin:2px 0 4px; font-weight:600;
+}
+#adminDashboardView .ad-staff-modal-foot{ display:flex; justify-content:flex-end; gap:10px; margin-top:6px; }
+#adminDashboardView .ad-staff-btn-ghost{
+  background:#fff; color:#5A5760; border:1px solid #E4E3E8; border-radius:8px; padding:10px 18px;
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:700; cursor:pointer;
+}
+#adminDashboardView .ad-staff-btn-ghost:hover{ background:#F5F4F7; }
+#adminDashboardView .ad-staff-btn-save{
+  background:#14305E; color:#fff; border:none; border-radius:8px; padding:10px 20px;
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:700; cursor:pointer;
+}
+#adminDashboardView .ad-staff-btn-save:hover{ background:#0A1F3F; }
+#adminDashboardView .ad-staff-btn-danger{
+  background:#C0392B; color:#fff; border:none; border-radius:8px; padding:10px 20px;
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:700; cursor:pointer;
+}
+#adminDashboardView .ad-staff-btn-danger:hover{ background:#A32F23; }
+#adminDashboardView .ad-confirm-text{ font-size:13.5px; color:#5A5760; line-height:1.5; margin:0 0 18px; }
+#adminDashboardView .ad-activity-list{ list-style:none; margin:0; padding:0; max-height:300px; overflow-y:auto; }
+#adminDashboardView .ad-activity-item{ display:flex; flex-direction:column; gap:2px; padding:11px 0; border-bottom:1px solid #EAE4D6; }
+#adminDashboardView .ad-activity-item:last-child{ border-bottom:none; }
+#adminDashboardView .ad-activity-text{ font-size:13.5px; color:#15121A; font-weight:500; }
+#adminDashboardView .ad-activity-time{ font-size:11.5px; color:#8C8A95; }
+#adminDashboardView .ad-empty-note{ font-size:13px; color:#8C8A95; line-height:1.55; margin:6px 0 0 28px; }
+#adminDashboardView .ad-role-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid #EAE4D6; font-size:14px; color:#15121A; font-weight:600; }
+#adminDashboardView .ad-role-row:last-child{ border-bottom:none; }
+#adminDashboardView .ad-role-row span{ font-size:20px; font-weight:800; color:#14305E; }
+
+@media (max-width:640px){
+  #adminDashboardView .ad-staff-head{ flex-direction:column; gap:14px; }
+  #adminDashboardView .ad-staff-toolbar{ flex-direction:column; }
+  #adminDashboardView .ad-staff-tablewrap{ overflow-x:auto; }
+  #adminDashboardView table.ad-staff-table{ min-width:640px; }
+}
+
+@media (max-width:960px){
+  #adminDashboardView .ad-top-grid{ grid-template-columns:1fr; }
+  #adminDashboardView .ad-bottom-grid{ grid-template-columns:1fr; }
+}
+@media (max-width:600px){
+  #adminDashboardView .ad-header{ padding:20px 22px; }
+  #adminDashboardView .ad-main{ padding:22px 18px 50px; }
+  #adminDashboardView .ad-stat-grid{ grid-template-columns:1fr; }
+  #adminDashboardView .ad-queue-split{ grid-template-columns:1fr; }
+  #adminDashboardView .ad-queue-col:first-child{ border-right:none; border-bottom:1px solid #E4E3E8; }
+  #adminDashboardView .ad-waiting-grid{ grid-template-columns:1fr; }
+  #adminDashboardView .ad-tabs{ gap:20px; }
+  #adminDashboardView .ad-tab{ font-size:16px; }
+}
+
+</style>
+</head>
+<body>
+
+  <div class="hidden" id="adminLoginView">
+    <div class="admin-card">
+      <div class="admin-icon">
+        <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+      </div>
+      <h1>Admin Access</h1>
+
+      <div class="admin-field">
+        <label for="adminUser">Admin User :</label>
+        <input id="adminUser" type="text" autocomplete="username">
+      </div>
+      <div class="admin-field">
+        <label for="adminPass">Password :</label>
+        <input id="adminPass" type="password" autocomplete="current-password">
+      </div>
+      <div class="admin-error" id="adminLoginError">Please enter both fields.</div>
+
+      <div class="admin-btn-row">
+        <button class="admin-btn admin-btn-staff" type="button" id="adminBackToStaffBtn">Login as Staff</button>
+        <button class="admin-btn admin-btn-go" type="button" id="adminGoToDashboardBtn">Login to Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hidden" id="adminDashboardView">
+    <header class="ad-header">
+      <div>
+        <h1 class="ad-htitle">Admin Portal</h1>
+        <p class="ad-hsub">Staff Management Dashboard</p>
+      </div>
+      <div class="ad-hactions">
+        <div class="ad-hicon-wrap">
+          <button class="ad-hicon" type="button" id="adProfileBtn" aria-label="Admin account">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+          </button>
+          <div class="ad-hdropdown" id="adProfileDropdown">
+            <div class="ad-hdropdown-user">
+              <div class="ad-hdropdown-name">Admin</div>
+              <div class="ad-hdropdown-meta">La Naval Academy</div>
+            </div>
+            <div class="ad-hdropdown-divider"></div>
+            <div class="ad-hdropdown-item danger" id="adLogoutBtn">
+              <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+              Log out
+            </div>
+          </div>
+        </div>
+        <button class="ad-hicon" type="button" aria-label="Menu">
+          <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="ad-main">
+      <div class="ad-tabs">
+        <button class="ad-tab active" type="button" data-adpanel="overview">Overview</button>
+        <button class="ad-tab" type="button" data-adpanel="staff">Staff Management</button>
+        <button class="ad-tab" type="button" data-adpanel="queue">Queue Management</button>
+      </div>
+
+      <div class="ad-panel active" id="ad-panel-overview">
+        <div class="ad-top-grid">
+          <div class="ad-stat-grid">
+            <div class="ad-card">
+              <div class="ad-stat-icon pink"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.4 3-5.6 6.5-5.6s6.5 2.2 6.5 5.6"/><circle cx="17" cy="7.5" r="2.3"/><path d="M15.2 13.2c2.7.4 4.8 2.3 4.8 5"/></svg></div>
+              <div class="ad-stat-value" id="adStatTotal">0</div>
+              <div class="ad-stat-label">Total Staff Accounts</div>
+            </div>
+            <div class="ad-card">
+              <div class="ad-stat-icon purple"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20.5c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 11l2 2 4-4"/></svg></div>
+              <div class="ad-stat-value" id="adStatActive">0</div>
+              <div class="ad-stat-label">Active Staff</div>
+            </div>
+            <div class="ad-card">
+              <div class="ad-stat-icon blue"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20.5c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M17 9l4 4M21 9l-4 4"/></svg></div>
+              <div class="ad-stat-value" id="adStatInactive">0</div>
+              <div class="ad-stat-label">Inactive Staff</div>
+            </div>
+            <div class="ad-card">
+              <div class="ad-stat-icon orange"><svg viewBox="0 0 24 24"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg></div>
+              <div class="ad-stat-value" id="adStatActivities">0</div>
+              <div class="ad-stat-label">Logged Admin Activities</div>
+            </div>
+          </div>
+
+          <div class="ad-card">
+            <div class="ad-cal-head">
+              <button class="ad-cal-nav" type="button" id="adCalPrev" aria-label="Previous month"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+              <div class="ad-cal-title" id="adCalTitle"></div>
+              <button class="ad-cal-nav" type="button" id="adCalNext" aria-label="Next month"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+            </div>
+            <div class="ad-cal-grid" id="adCalGrid"></div>
+          </div>
+        </div>
+
+        <div class="ad-bottom-grid">
+          <div class="ad-card">
+            <div class="ad-section-head">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              <h2 class="ad-section-title">Recent Administrative Activity</h2>
+            </div>
+            <p class="ad-section-sub">Latest actions taken in Staff Management</p>
+            <ul class="ad-activity-list" id="adActivityList"></ul>
+            <p class="ad-empty-note" id="adActivityEmpty" hidden>No administrative activity has been recorded yet.</p>
+          </div>
+
+          <div class="ad-card">
+            <div class="ad-section-head blue">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+              <h2 class="ad-section-title">Staff by Role</h2>
+            </div>
+            <p class="ad-section-sub">Registered staff accounts per role</p>
+            <div id="adRoleBreakdown"></div>
+            <p class="ad-empty-note" id="adRequestsNote">School records request totals are not shown because requests are not yet stored in the system database. They will appear here once the kiosk saves requests.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="ad-panel" id="ad-panel-staff">
+        <div class="ad-staff-card">
+          <div class="ad-staff-head">
+            <div>
+              <h2 class="ad-staff-title">Staff Accounts</h2>
+              <p class="ad-staff-sub">Manage staff</p>
+            </div>
+            <button class="ad-staff-addbtn" type="button" id="adStaffAddBtn">+ Add</button>
+          </div>
+
+          <div class="ad-staff-toolbar">
+            <div class="ad-staff-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input type="text" id="adStaffSearch" placeholder="Search" aria-label="Search staff">
+            </div>
+            <div class="ad-staff-filter">
+              <select id="adStaffStatusFilter" aria-label="Filter by status">
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="deactivated">Deactivated</option>
+              </select>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
+          </div>
+
+          <div class="ad-staff-tablewrap">
+            <table class="ad-staff-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Email</th>
+                  <th>Contact No.</th>
+                  <th>Status</th>
+                  <th class="ad-staff-actioncol">Action</th>
+                </tr>
+              </thead>
+              <tbody id="adStaffTbody"></tbody>
+            </table>
+            <p class="ad-staff-empty" id="adStaffEmpty" hidden>No staff accounts match your search.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="ad-staff-modal-overlay" id="adStaffModalOverlay" hidden>
+        <div class="ad-staff-modal">
+          <div class="ad-staff-modal-head">
+            <h3 id="adStaffModalTitle">Add Staff</h3>
+            <button type="button" class="ad-staff-modal-close" id="adStaffModalClose" aria-label="Close">&times;</button>
+          </div>
+          <div class="ad-staff-modal-body">
+            <div class="ad-staff-field">
+              <label for="adStaffFName">Full Name</label>
+              <input type="text" id="adStaffFName" autocomplete="off">
+            </div>
+            <div class="ad-staff-field">
+              <label for="adStaffFRole">Role</label>
+              <select id="adStaffFRole">
+                <option value="Registrar">Registrar</option>
+                <option value="Cashier">Cashier</option>
+              </select>
+            </div>
+            <div class="ad-staff-field">
+              <label for="adStaffFEmail">Email</label>
+              <input type="email" id="adStaffFEmail" autocomplete="off">
+            </div>
+            <div class="ad-staff-field">
+              <label for="adStaffFContact">Contact No.</label>
+              <input type="text" id="adStaffFContact" autocomplete="off">
+            </div>
+            <div class="ad-staff-field">
+              <label for="adStaffFUsername">Username</label>
+              <input type="text" id="adStaffFUsername" autocomplete="off" placeholder="e.g. jsantos.registrar">
+            </div>
+            <div class="ad-staff-field" id="adStaffPasswordField">
+              <label for="adStaffFPassword" id="adStaffPasswordLabel">Password</label>
+              <input type="password" id="adStaffFPassword" autocomplete="new-password" placeholder="At least 8 characters">
+            </div>
+            <p class="ad-staff-modal-error" id="adStaffModalError" hidden></p>
+          </div>
+          <div class="ad-staff-modal-foot">
+            <button type="button" class="ad-staff-btn-ghost" id="adStaffModalCancel">Cancel</button>
+            <button type="button" class="ad-staff-btn-save" id="adStaffModalSave">Save</button>
+          </div>
+        </div>
+      </div>
+      <div class="ad-staff-modal-overlay" id="adConfirmOverlay" style="z-index:600;" hidden>
+        <div class="ad-staff-modal">
+          <div class="ad-staff-modal-head">
+            <h3 id="adConfirmTitle">Please confirm</h3>
+          </div>
+          <p class="ad-confirm-text" id="adConfirmText"></p>
+          <div class="ad-staff-modal-foot">
+            <button type="button" class="ad-staff-btn-ghost" id="adConfirmCancel">Cancel</button>
+            <button type="button" class="ad-staff-btn-save" id="adConfirmOk">Confirm</button>
+          </div>
+        </div>
+      </div>
+      <div class="ad-panel" id="ad-panel-queue">
+        <div class="ad-placeholder">
+          <svg class="picon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2.5" y="4.5" width="19" height="12.5" rx="2"/><path d="M9 21h6M12 17v4"/></svg>
+          <h3>Queue Management</h3>
+          <p>Review live queue activity, transfer tickets, and manage counter status here.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="brandline">
+    <div class="mark">A</div>
+    <div>
+      <div class="name">Acadilynx</div>
+      <div class="sub">La Naval Academy · Navotas City</div>
+    </div>
+  </div>
+
+  <div class="ticket">
+    <div class="ticket-head">
+      <div class="seal">
+        <svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+      </div>
+      <h1>Staff Access</h1>
+      <p>Sign in to manage today's queue.</p>
+    </div>
+
+    <div class="perf">
+      <div class="notch left"></div>
+      <div class="notch right"></div>
+    </div>
+
+    <div class="ticket-body">
+      <div class="field">
+        <label for="user">Username</label>
+        <div class="input-wrap">
+          <input id="user" type="text" placeholder="e.g. jsantos.registrar" autocomplete="username">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="pass">Password</label>
+        <div class="input-wrap">
+          <input id="pass" type="password" placeholder="Enter your password" autocomplete="current-password">
+          <button class="toggle-visibility" type="button" aria-label="Show password" onclick="togglePw(this)">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="row-meta" style="justify-content:flex-end;">
+        <a href="#">Forgot password?</a>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-admin" type="button" id="loginAsAdminBtn">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+          Login as Admin
+        </button>
+        <button class="btn btn-dashboard" type="button">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+          Dashboard
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SELECT COUNTER — step 4, shown after successful login -->
+  <div class="ticket widest hidden" id="counterTicket">
+    <div class="ticket-head">
+      <button class="back-btn" type="button" id="backToLogin2" aria-label="Back to login">
+        <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="counter-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+      </div>
+      <h1>Select Counter</h1>
+      <p>Choose an available service window</p>
+    </div>
+
+    <div class="ticket-body">
+      <div class="counter-grid">
+        <div class="counter-card occupied" data-counter="1">
+          <div class="counter-btn">Counter 1</div>
+          <div class="counter-status occupied">Occupied</div>
+          <div class="counter-staff">Mr. Masipag</div>
+        </div>
+        <div class="counter-card available" data-counter="2">
+          <div class="counter-btn">Counter 2</div>
+          <div class="counter-status available">Available</div>
+          <div class="counter-staff"></div>
+        </div>
+        <div class="counter-card available" data-counter="3">
+          <div class="counter-btn">Counter 3</div>
+          <div class="counter-status available">Available</div>
+          <div class="counter-staff"></div>
+        </div>
+      </div>
+
+      <div style="text-align:center; font-size:13px; color:var(--slate); margin:20px 0;">
+        <p>Select an available counter to begin serving</p>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" type="button" id="backToLoginBtn">Back</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- STAFF PORTAL VIEW — step 5, shown after a vacant counter is selected -->
+  <div id="staffPortalView" class="hidden" style="width:100%;">
+<header>
+  <div>
+    <h1 class="htitle">Staff Portal</h1>
+    <p class="hsub" id="hsubLine">Staff Management Dashboard</p>
+  </div>
+  <div class="hactions">
+    <div class="hicon" id="profileBtn" aria-label="Staff account">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div class="dropdown" id="profileDropdown">
+        <div class="dropdown-user" id="dropdownUser">
+          <div class="dropdown-user-name" id="dropdownUserName">Staff Member</div>
+          <div class="dropdown-user-meta" id="dropdownUserMeta">Counter —</div>
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>Account details</div>
+        <div class="dropdown-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Change password</div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-item danger" id="logoutBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</div>
+      </div>
+    </div>
+    <div class="hicon" id="menuBtn" aria-label="More options">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1"/><circle cx="3" cy="12" r="1"/><circle cx="3" cy="18" r="1"/></svg>
+      <div class="dropdown" id="menuDropdown">
+        <div class="dropdown-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9 2 2 0 11-2.8 2.8 1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5 2 2 0 11-4 0 1.7 1.7 0 00-1-1.6 1.7 1.7 0 00-1.9.3 2 2 0 11-2.8-2.8 1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1 2 2 0 110-4 1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.9 2 2 0 112.8-2.8 1.7 1.7 0 001.9.3h0a1.7 1.7 0 001-1.5 2 2 0 114 0 1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3 2 2 0 112.8 2.8 1.7 1.7 0 00-.3 1.9v0a1.7 1.7 0 001.5 1 2 2 0 110 4 1.7 1.7 0 00-1.5 1z"/></svg>Settings</div>
+        <div class="dropdown-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>Help &amp; support</div>
+        <div class="dropdown-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v16h16M4 20l6-6 4 4 6-8"/></svg>View reports</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <div class="tab active" data-view="overview">Overview</div>
+    <div class="tab" data-view="queue">Queue</div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <section class="view active" id="view-overview">
+
+    <div class="top-grid">
+      <div class="stat-grid">
+        <div class="card">
+          <div class="stat-icon pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg></div>
+          <div class="stat-value" id="statWaiting">5</div>
+          <div class="stat-label">Total Waiting</div>
+        </div>
+        <div class="card">
+          <div class="stat-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8l2 2 4-4"/></svg></div>
+          <div class="stat-value" id="statServing">3</div>
+          <div class="stat-label">Currently Serving</div>
+        </div>
+        <div class="card">
+          <div class="stat-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg></div>
+          <div class="stat-value" id="statCounters">2<small>/5</small></div>
+          <div class="stat-label">Active Counters</div>
+        </div>
+        <div class="card">
+          <div class="stat-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6M12 2v2"/></svg></div>
+          <div class="stat-value">15<small>Mins</small></div>
+          <div class="stat-label">Average Wait Time</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cal-head">
+          <div class="cal-nav" id="calPrev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg></div>
+          <div class="cal-title" id="calTitle">June 2026</div>
+          <div class="cal-nav" id="calNext"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 18l6-6-6-6"/></svg></div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+
+    <div class="bottom-grid">
+      <div class="section-card">
+        <div class="section-head">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+          <h3 class="section-title">Active Queue Status</h3>
+        </div>
+        <p class="section-sub">Real-time overview of the current queue</p>
+
+        <div class="queue-split" id="queueSplit">
+          <div class="queue-col" id="regCounterCol">
+            <div class="queue-col-label">Registrar Counter</div>
+            <div class="now-serving-tag">Now Serving</div>
+            <div class="ticket-num purple" id="regTicket">F112</div>
+            <div class="waiting-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <div>
+                <span class="waiting-count" id="regWaiting">3</span>
+                <span class="waiting-text">People waiting</span>
+              </div>
+            </div>
+          </div>
+          <div class="queue-col" id="cshCounterCol">
+            <div class="queue-col-label">Cashier Counter</div>
+            <div class="now-serving-tag">Now Serving</div>
+            <div class="ticket-num green" id="cshTicket">R102</div>
+            <div class="waiting-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              <div>
+                <span class="waiting-count" id="cshWaiting">2</span>
+                <span class="waiting-text">People waiting</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-head">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="5" width="3" height="13"/></svg>
+          <h3 class="section-title">Peak Hours and Peak Season</h3>
+        </div>
+        <p class="section-sub">Insight on queue traffic patterns</p>
+
+        <div class="peak-split">
+          <div>
+            <div class="peak-block-head">
+              <span class="peak-label">Peak Hours</span>
+              <span class="peak-badge">1:00 PM – 3:00 PM</span>
+            </div>
+            <div class="bar-chart" id="hoursChart"></div>
+          </div>
+          <div>
+            <div class="peak-block-head">
+              <span class="peak-label">Peak Season</span>
+              <span class="peak-badge">March – September</span>
+            </div>
+            <div class="bar-chart" id="seasonChart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUEUE -->
+  <section class="view" id="view-queue">
+    <div class="counter-tabs" id="counterTabs"></div>
+
+    <div class="queue-main-grid">
+      <!-- NOW SERVING -->
+      <div class="serving-card">
+        <div class="serving-head">
+          <div>
+            <h3>Now Serving</h3>
+            <p>Current Customer</p>
+          </div>
+          <button class="btn-close-counter" id="closeCounterBtn" type="button">Close Counter</button>
+        </div>
+        <div class="serving-body" id="servingBody"></div>
+      </div>
+
+      <!-- WAITING QUEUE -->
+      <div class="waiting-card">
+        <div class="waiting-head">
+          <div>
+            <h3>Waiting Queue</h3>
+            <p id="waitingCountLabel">0 customers waiting</p>
+          </div>
+          <div class="waiting-head-actions">
+            <button class="btn-onhold" id="onHoldToggleBtn" type="button">On Hold<span class="onhold-count" id="onHoldCount">0</span></button>
+            <button class="btn-txn-limit" id="txnLimitBtn" type="button">Set Transaction Limit</button>
+          </div>
+        </div>
+        <div class="waiting-list" id="waitingList"></div>
+        <button class="btn-call-next" id="callNextBtn" type="button">Call Next Customer</button>
+      </div>
+    </div>
+
+    <!-- QUEUE HISTORY -->
+    <div class="history-card">
+      <h3>Queue History (Today)</h3>
+      <p>View all completed and cancelled transactions</p>
+      <table class="history-table">
+        <thead>
+          <tr><th>Queue #</th><th>Name</th><th>Type</th><th>Status</th><th>Time</th></tr>
+        </thead>
+        <tbody id="historyTableBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+
+  </div>
+
+
+<script>
+  const loginTicket = document.querySelector('.ticket:not(.wide):not(.widest)');
+  const counterTicket = document.getElementById('counterTicket');
+  const staffPortalView = document.getElementById('staffPortalView');
+  const adminLoginView = document.getElementById('adminLoginView');
+  const adminDashboardView = document.getElementById('adminDashboardView');
+
+  let credentials = { username: '', password: '', role: '', fullName: '' };
+  let selectedCounter = null;
+
+  function goToStep(step){
+    loginTicket.classList.toggle('hidden', step !== 0);
+    counterTicket.classList.toggle('hidden', step !== 4);
+    staffPortalView.classList.toggle('hidden', step !== 5);
+    document.body.classList.toggle('portal-mode', step === 5);
+    if (step === 5) populateStaffPortal();
+  }
+
+  // ---------- Admin Access overlay ----------
+  function openAdminLogin(){
+    document.getElementById('adminUser').value = '';
+    document.getElementById('adminPass').value = '';
+    document.getElementById('adminLoginError').classList.remove('show');
+    document.getElementById('adminUser').classList.remove('invalid');
+    document.getElementById('adminPass').classList.remove('invalid');
+    adminLoginView.classList.remove('hidden');
+  }
+  function closeAdminLogin(){
+    adminLoginView.classList.add('hidden');
+  }
+
+  document.getElementById('loginAsAdminBtn').addEventListener('click', openAdminLogin);
+
+  document.getElementById('adminBackToStaffBtn').addEventListener('click', () => {
+    closeAdminLogin();
+    goToStep(0);
+  });
+
+  document.getElementById('adminGoToDashboardBtn').addEventListener('click', () => {
+    const adminUserInput = document.getElementById('adminUser');
+    const adminPassInput = document.getElementById('adminPass');
+    const adminErrorEl = document.getElementById('adminLoginError');
+    const filled = adminUserInput.value.trim() !== '' && adminPassInput.value.trim() !== '';
+
+    adminUserInput.classList.toggle('invalid', !filled);
+    adminPassInput.classList.toggle('invalid', !filled);
+    adminErrorEl.classList.toggle('show', !filled);
+    if (!filled) return;
+
+    // TODO: validate admin credentials against backend before granting access.
+    closeAdminLogin();
+    openAdminDashboard();
+  });
+
+  // ---------- Admin Dashboard Overview ----------
+  function openAdminDashboard(){
+    adminDashboardView.classList.remove('hidden');
+    renderAdminCalendar();
+    renderAdOverview();
+  }
+
+  document.querySelectorAll('#adminDashboardView .ad-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#adminDashboardView .ad-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('#adminDashboardView .ad-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('ad-panel-' + tab.dataset.adpanel).classList.add('active');
+    });
+  });
+
+  // ---------- Staff Management (Admin Dashboard) ----------
+  // TODO(BACKEND): replace this localStorage-backed mock with GET/POST/PATCH
+  // calls to the staff accounts API. The list starts empty and only ever
+  // contains accounts the Admin creates through the "+ Add" flow below;
+  // localStorage is a prototype-only stand-in for real persistence so the
+  // list survives refresh/reopen until a backend exists.
+  const AD_STAFF_STORAGE_KEY = 'acadilynxStaffAccounts';
+
+  function loadAdStaffAccounts(){
+    try {
+      const raw = localStorage.getItem(AD_STAFF_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveAdStaffAccounts(){
+    // TODO(BACKEND): drop localStorage once staff CRUD hits a real API.
+    try { localStorage.setItem(AD_STAFF_STORAGE_KEY, JSON.stringify(adStaffAccounts)); }
+    catch (e) { /* storage unavailable — prototype-only, safe to ignore */ }
+  }
+
+  let adStaffAccounts = loadAdStaffAccounts();
+  let adStaffSearchTerm = '';
+  let adStaffStatusFilter = 'all';
+  let adStaffModalMode = 'add'; // 'add' | 'edit' | 'view'
+  let adStaffEditingId = null;
+
+  function adStaffEscape(str){
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+
+  const adStaffIconEye = '<svg viewBox="0 0 24 24"><path d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const adStaffIconPencil = '<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>';
+  const adStaffIconLockClosed = '<svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="9.5" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 019 0v3.5"/></svg>';
+  const adStaffIconKey = '<svg viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2L20 3M16 7l3 3M14 9l2 2"/></svg>';
+  const adStaffIconLockOpen = '<svg viewBox="0 0 24 24"><rect x="4" y="10.5" width="16" height="9.5" rx="2"/><path d="M7.5 10.5V7a4.5 4.5 0 018.4-2.2"/></svg>';
+
+  const AD_ACTIVITY_STORAGE_KEY = 'acadilynxAdminActivity';
+
+  function loadAdActivity(){
+    try {
+      const raw = localStorage.getItem(AD_ACTIVITY_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  let adActivityLog = loadAdActivity();
+
+  function logAdActivity(text){
+    adActivityLog.unshift({ text, at: new Date().toISOString() });
+    adActivityLog = adActivityLog.slice(0, 100);
+    try { localStorage.setItem(AD_ACTIVITY_STORAGE_KEY, JSON.stringify(adActivityLog)); }
+    catch (e) {}
+    renderAdOverview();
+  }
+
+  function renderAdOverview(){
+    const total = adStaffAccounts.length;
+    const active = adStaffAccounts.filter(a => a.status === 'active').length;
+    document.getElementById('adStatTotal').textContent = total;
+    document.getElementById('adStatActive').textContent = active;
+    document.getElementById('adStatInactive').textContent = total - active;
+    document.getElementById('adStatActivities').textContent = adActivityLog.length;
+
+    const roleBox = document.getElementById('adRoleBreakdown');
+    const roles = ['Registrar', 'Cashier'];
+    roleBox.innerHTML = roles.map(r => {
+      const n = adStaffAccounts.filter(a => a.role === r).length;
+      return '<div class="ad-role-row">' + r + ' Staff<span>' + n + '</span></div>';
+    }).join('');
+
+    const list = document.getElementById('adActivityList');
+    const empty = document.getElementById('adActivityEmpty');
+    empty.hidden = adActivityLog.length > 0;
+    list.innerHTML = adActivityLog.slice(0, 8).map(a => {
+      const when = new Date(a.at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' });
+      return '<li class="ad-activity-item"><span class="ad-activity-text">' + adStaffEscape(a.text) + '</span><span class="ad-activity-time">' + adStaffEscape(when) + '</span></li>';
+    }).join('');
+  }
+
+  function renderAdStaffTable(){
+    const tbody = document.getElementById('adStaffTbody');
+    const emptyMsg = document.getElementById('adStaffEmpty');
+    const term = adStaffSearchTerm.trim().toLowerCase();
+
+    renderAdOverview();
+
+    const filtered = adStaffAccounts.filter(s => {
+      const matchesStatus = adStaffStatusFilter === 'all' || s.status === adStaffStatusFilter;
+      const matchesTerm = !term || s.name.toLowerCase().includes(term) || s.email.toLowerCase().includes(term) || s.role.toLowerCase().includes(term) || (s.username || '').toLowerCase().includes(term);
+      return matchesStatus && matchesTerm;
+    });
+
+    if (!filtered.length){
+      tbody.innerHTML = '';
+      emptyMsg.textContent = adStaffAccounts.length ? 'No staff accounts match your search.' : 'No staff accounts yet. Use + Add to create the first one.';
+      emptyMsg.hidden = false;
+      return;
+    }
+    emptyMsg.hidden = true;
+
+    tbody.innerHTML = filtered.map(s => `
+      <tr data-id="${s.id}">
+        <td class="ad-staff-name">${adStaffEscape(s.name)}</td>
+        <td>${adStaffEscape(s.role)}</td>
+        <td class="ad-staff-email">${adStaffEscape(s.email)}</td>
+        <td>${adStaffEscape(s.contact)}</td>
+        <td><span class="ad-staff-pill ${s.status === 'active' ? 'active' : 'deactivated'}">${s.status === 'active' ? 'Active' : 'Deactivated'}</span></td>
+        <td class="ad-staff-actioncol">
+          <button type="button" class="ad-staff-icon-btn" data-action="view" data-id="${s.id}" aria-label="View ${adStaffEscape(s.name)}">${adStaffIconEye}</button>
+          <button type="button" class="ad-staff-icon-btn" data-action="edit" data-id="${s.id}" aria-label="Edit ${adStaffEscape(s.name)}">${adStaffIconPencil}</button>
+          <button type="button" class="ad-staff-icon-btn" data-action="reset" data-id="${s.id}" aria-label="Reset password for ${adStaffEscape(s.name)}">${adStaffIconKey}</button>
+          <button type="button" class="ad-staff-icon-btn ${s.status === 'active' ? 'unlock' : 'lock'}" data-action="toggle" data-id="${s.id}" aria-label="${s.status === 'active' ? 'Deactivate' : 'Activate'} ${adStaffEscape(s.name)}">${s.status === 'active' ? adStaffIconLockOpen : adStaffIconLockClosed}</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  const adConfirmOverlay = document.getElementById('adConfirmOverlay');
+  const adConfirmOk = document.getElementById('adConfirmOk');
+  let adConfirmAction = null;
+
+  function askAdConfirm(title, text, okLabel, danger, onConfirm){
+    document.getElementById('adConfirmTitle').textContent = title;
+    document.getElementById('adConfirmText').textContent = text;
+    adConfirmOk.textContent = okLabel;
+    adConfirmOk.className = danger ? 'ad-staff-btn-danger' : 'ad-staff-btn-save';
+    adConfirmAction = onConfirm;
+    adConfirmOverlay.hidden = false;
+  }
+
+  function closeAdConfirm(){
+    adConfirmOverlay.hidden = true;
+    adConfirmAction = null;
+  }
+
+  adConfirmOk.addEventListener('click', () => {
+    const action = adConfirmAction;
+    closeAdConfirm();
+    if (action) action();
+  });
+  document.getElementById('adConfirmCancel').addEventListener('click', closeAdConfirm);
+  adConfirmOverlay.addEventListener('click', (e) => { if (e.target === adConfirmOverlay) closeAdConfirm(); });
+
+  document.getElementById('adStaffSearch').addEventListener('input', (e) => {
+    adStaffSearchTerm = e.target.value;
+    renderAdStaffTable();
+  });
+  document.getElementById('adStaffStatusFilter').addEventListener('change', (e) => {
+    adStaffStatusFilter = e.target.value;
+    renderAdStaffTable();
+  });
+
+  const adStaffModalOverlay = document.getElementById('adStaffModalOverlay');
+  const adStaffModalTitle = document.getElementById('adStaffModalTitle');
+  const adStaffModalError = document.getElementById('adStaffModalError');
+  const adStaffFName = document.getElementById('adStaffFName');
+  const adStaffFRole = document.getElementById('adStaffFRole');
+  const adStaffFEmail = document.getElementById('adStaffFEmail');
+  const adStaffFContact = document.getElementById('adStaffFContact');
+  const adStaffFUsername = document.getElementById('adStaffFUsername');
+  const adStaffFPassword = document.getElementById('adStaffFPassword');
+  const adStaffPasswordField = document.getElementById('adStaffPasswordField');
+  const adStaffModalSave = document.getElementById('adStaffModalSave');
+  const adStaffFields = [adStaffFName, adStaffFRole, adStaffFEmail, adStaffFContact, adStaffFUsername, adStaffFPassword];
+
+  const adStaffNonPasswordFields = [adStaffFName, adStaffFRole, adStaffFEmail, adStaffFContact, adStaffFUsername];
+
+  function openAdStaffModal(mode, staff){
+    adStaffModalMode = mode;
+    adStaffEditingId = staff ? staff.id : null;
+    adStaffModalError.hidden = true;
+    adStaffModalError.textContent = '';
+
+    adStaffFName.value = staff ? staff.name : '';
+    adStaffFRole.value = staff ? staff.role : 'Registrar';
+    adStaffFEmail.value = staff ? staff.email : '';
+    adStaffFContact.value = staff ? staff.contact : '';
+    adStaffFUsername.value = staff && staff.username ? staff.username : '';
+    adStaffFPassword.value = '';
+    adStaffFPassword.placeholder = mode === 'edit' && staff && staff.password ? 'Leave blank to keep current password' : 'At least 8 characters';
+
+    const readOnly = mode === 'view';
+    const resetMode = mode === 'reset';
+    adStaffFields.forEach(f => { f.disabled = readOnly; });
+    adStaffNonPasswordFields.forEach(f => { f.closest('.ad-staff-field').style.display = resetMode ? 'none' : ''; });
+    adStaffPasswordField.style.display = readOnly ? 'none' : '';
+    document.getElementById('adStaffPasswordLabel').textContent = resetMode ? 'New Password' : 'Password';
+    if (resetMode) adStaffFPassword.placeholder = 'At least 8 characters';
+    adStaffModalSave.style.display = readOnly ? 'none' : '';
+    adStaffModalSave.textContent = resetMode ? 'Reset Password' : 'Save';
+    adStaffModalTitle.textContent = mode === 'add' ? 'Add Staff' : mode === 'edit' ? 'Edit Staff' : resetMode ? 'Reset Password — ' + staff.name : 'Staff Details';
+
+    adStaffModalOverlay.hidden = false;
+    if (resetMode) adStaffFPassword.focus();
+    else if (!readOnly) adStaffFName.focus();
+  }
+
+  function closeAdStaffModal(){
+    adStaffModalOverlay.hidden = true;
+  }
+
+  document.getElementById('adStaffAddBtn').addEventListener('click', () => openAdStaffModal('add', null));
+  document.getElementById('adStaffModalClose').addEventListener('click', closeAdStaffModal);
+  document.getElementById('adStaffModalCancel').addEventListener('click', closeAdStaffModal);
+  adStaffModalOverlay.addEventListener('click', (e) => { if (e.target === adStaffModalOverlay) closeAdStaffModal(); });
+
+  document.getElementById('adStaffTbody').addEventListener('click', (e) => {
+    const btn = e.target.closest('.ad-staff-icon-btn');
+    if (!btn) return;
+    const staff = adStaffAccounts.find(s => s.id === btn.dataset.id);
+    if (!staff) return;
+    const action = btn.dataset.action;
+
+    if (action === 'view') openAdStaffModal('view', staff);
+    else if (action === 'edit') openAdStaffModal('edit', staff);
+    else if (action === 'reset') openAdStaffModal('reset', staff);
+    else if (action === 'toggle'){
+      const activating = staff.status !== 'active';
+      askAdConfirm(
+        activating ? 'Activate account?' : 'Deactivate account?',
+        activating
+          ? staff.name + ' will be able to log in to the Staff Portal again.'
+          : staff.name + ' will no longer be able to log in until the account is reactivated.',
+        activating ? 'Activate' : 'Deactivate',
+        !activating,
+        () => {
+          // TODO(BACKEND): PATCH /api/staff/{id} { status }
+          staff.status = activating ? 'active' : 'deactivated';
+          saveAdStaffAccounts();
+          renderAdStaffTable();
+          logAdActivity((activating ? 'Activated' : 'Deactivated') + ' staff account: ' + staff.name);
+        }
+      );
+    }
+  });
+
+  function showAdStaffError(msg){
+    adStaffModalError.textContent = msg;
+    adStaffModalError.hidden = false;
+  }
+
+  adStaffModalSave.addEventListener('click', () => {
+    const password = adStaffFPassword.value;
+    const existing = adStaffEditingId ? adStaffAccounts.find(x => x.id === adStaffEditingId) : null;
+
+    if (adStaffModalMode === 'reset'){
+      if (!existing) return;
+      if (password.length < 8) return showAdStaffError('Password must be at least 8 characters.');
+      askAdConfirm('Reset password?', 'Set a new password for ' + existing.name + '? Their current password will stop working immediately.', 'Reset Password', true, () => {
+        // TODO(BACKEND): POST /api/staff/{id}/reset-password (store a salted hash, never plain text)
+        existing.password = password;
+        saveAdStaffAccounts();
+        closeAdStaffModal();
+        renderAdStaffTable();
+        logAdActivity('Reset password for staff account: ' + existing.name);
+      });
+      return;
+    }
+
+    const name = adStaffFName.value.trim();
+    const role = adStaffFRole.value;
+    const email = adStaffFEmail.value.trim();
+    const contact = adStaffFContact.value.trim();
+    const username = adStaffFUsername.value.trim();
+
+    if (!name || !email || !contact || !username) return showAdStaffError('Please fill in all fields.');
+    if (!/^\S+@\S+\.\S+$/.test(email)) return showAdStaffError('Please enter a valid email address.');
+    if (!/^[A-Za-z0-9._-]{3,}$/.test(username)) return showAdStaffError('Username must be at least 3 characters: letters, numbers, dots, dashes or underscores.');
+    if (adStaffModalMode === 'add' || !(existing && existing.password)){
+      if (password.length < 8) return showAdStaffError('Password must be at least 8 characters.');
+    } else if (password && password.length < 8){
+      return showAdStaffError('Password must be at least 8 characters.');
+    }
+    if (adStaffAccounts.some(x => x.id !== adStaffEditingId && x.username && x.username.toLowerCase() === username.toLowerCase())){
+      return showAdStaffError('That username is already taken.');
+    }
+
+    if (adStaffModalMode === 'add'){
+      // TODO(BACKEND): POST /api/staff { name, role, email, contact, username, password }
+      adStaffAccounts.push({ id: 'stf-' + Date.now(), name, role, email, contact, username, password, status: 'active' });
+      saveAdStaffAccounts();
+      closeAdStaffModal();
+      renderAdStaffTable();
+      logAdActivity('Created staff account: ' + name + ' (' + role + ')');
+    } else if (adStaffModalMode === 'edit' && existing){
+      askAdConfirm('Save changes?', 'Update the account details for ' + existing.name + '?', 'Save Changes', false, () => {
+        // TODO(BACKEND): PATCH /api/staff/{id} { name, role, email, contact, username, password? }
+        existing.name = name; existing.role = role; existing.email = email; existing.contact = contact; existing.username = username;
+        if (password) existing.password = password;
+        saveAdStaffAccounts();
+        closeAdStaffModal();
+        renderAdStaffTable();
+        logAdActivity('Edited staff account: ' + name);
+      });
+    }
+  });
+
+  renderAdStaffTable();
+
+  // ---------- Admin header dropdown (profile / logout) ----------
+  const adProfileBtn = document.getElementById('adProfileBtn');
+  const adProfileDropdown = document.getElementById('adProfileDropdown');
+
+  adProfileBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    adProfileDropdown.classList.toggle('open');
+  });
+  document.addEventListener('click', () => {
+    adProfileDropdown.classList.remove('open');
+  });
+
+  // Log out — closes the Admin Dashboard and returns to the Staff Access
+  // login screen within the same page.
+  // TODO(BACKEND): invalidate the admin session/token on logout.
+  document.getElementById('adLogoutBtn').addEventListener('click', () => {
+    adProfileDropdown.classList.remove('open');
+    adminDashboardView.classList.add('hidden');
+    goToStep(0);
+  });
+
+  let adViewYear = 2026, adViewMonth = 5;
+  let adSelectedDate = { year: 2026, month: 5, day: 15 };
+
+  function renderAdminCalendar(){
+    const adCalGrid = document.getElementById('adCalGrid');
+    document.getElementById('adCalTitle').textContent = monthNames[adViewMonth] + ' ' + adViewYear;
+    adCalGrid.innerHTML = '';
+    ['SUN','MON','TUE','WED','THUR','FRI','SAT'].forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'ad-cal-dow';
+      el.textContent = d;
+      adCalGrid.appendChild(el);
+    });
+
+    const firstDay = new Date(adViewYear, adViewMonth, 1).getDay();
+    const daysInMonth = new Date(adViewYear, adViewMonth + 1, 0).getDate();
+    const prevMonthDays = new Date(adViewYear, adViewMonth, 0).getDate();
+
+    for (let i = firstDay - 1; i >= 0; i--){
+      const el = document.createElement('div');
+      el.className = 'ad-cal-day muted';
+      el.textContent = prevMonthDays - i;
+      adCalGrid.appendChild(el);
+    }
+    for (let d = 1; d <= daysInMonth; d++){
+      const el = document.createElement('div');
+      el.className = 'ad-cal-day';
+      el.textContent = d;
+      const isToday = today.getFullYear() === adViewYear && today.getMonth() === adViewMonth && today.getDate() === d;
+      const isSelected = adSelectedDate.year === adViewYear && adSelectedDate.month === adViewMonth && adSelectedDate.day === d;
+      if (isToday) el.classList.add('today');
+      if (isSelected) el.classList.add('selected');
+      el.addEventListener('click', () => {
+        adSelectedDate = { year: adViewYear, month: adViewMonth, day: d };
+        renderAdminCalendar();
+        // TODO: fetch admin queue/staff data for adSelectedDate from backend
+      });
+      adCalGrid.appendChild(el);
+    }
+    const totalCells = firstDay + daysInMonth;
+    const trailing = (7 - (totalCells % 7)) % 7;
+    for (let d = 1; d <= trailing; d++){
+      const el = document.createElement('div');
+      el.className = 'ad-cal-day muted';
+      el.textContent = d;
+      adCalGrid.appendChild(el);
+    }
+  }
+
+  document.getElementById('adCalPrev').addEventListener('click', () => {
+    adViewMonth--;
+    if (adViewMonth < 0){ adViewMonth = 11; adViewYear--; }
+    renderAdminCalendar();
+  });
+  document.getElementById('adCalNext').addEventListener('click', () => {
+    adViewMonth++;
+    if (adViewMonth > 11){ adViewMonth = 0; adViewYear++; }
+    renderAdminCalendar();
+  });
+
+  [document.getElementById('adminUser'), document.getElementById('adminPass')].forEach(input => {
+    input.addEventListener('input', () => {
+      input.classList.remove('invalid');
+      document.getElementById('adminLoginError').classList.remove('show');
+    });
+  });
+
+  // Handle login (Dashboard button on login screen)
+  const dashboardBtn = document.querySelector('.btn-dashboard');
+  dashboardBtn.addEventListener('click', () => {
+    const usernameInput = document.getElementById('user');
+    const passwordInput = document.getElementById('pass');
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    // Validate both fields are filled
+    let usernameValid = username !== '';
+    let passwordValid = password !== '';
+
+    // Mark fields as invalid if empty
+    if (!usernameValid) {
+      usernameInput.classList.add('invalid');
+      usernameInput.closest('.field').classList.add('has-error');
+      if (!usernameInput.closest('.field').querySelector('.error-text')) {
+        const errorEl = document.createElement('div');
+        errorEl.className = 'error-text';
+        errorEl.textContent = 'Username is required.';
+        usernameInput.closest('.field').appendChild(errorEl);
+      }
+    }
+
+    if (!passwordValid) {
+      passwordInput.classList.add('invalid');
+      passwordInput.closest('.field').classList.add('has-error');
+      if (!passwordInput.closest('.field').querySelector('.error-text')) {
+        const errorEl = document.createElement('div');
+        errorEl.className = 'error-text';
+        errorEl.textContent = 'Password is required.';
+        passwordInput.closest('.field').appendChild(errorEl);
+      }
+    }
+
+    // If either field is empty, stop here
+    if (!usernameValid || !passwordValid) {
+      return;
+    }
+
+    const account = adStaffAccounts.find(a => a.username && a.username.toLowerCase() === username.toLowerCase() && a.password === password);
+    const errField = usernameInput.closest('.field');
+    function showLoginError(msg){
+      usernameInput.classList.add('invalid');
+      errField.classList.add('has-error');
+      let errorEl = errField.querySelector('.error-text');
+      if (!errorEl){
+        errorEl = document.createElement('div');
+        errorEl.className = 'error-text';
+        errField.appendChild(errorEl);
+      }
+      errorEl.textContent = msg;
+    }
+
+    if (!account){
+      showLoginError('Invalid username or password.');
+      return;
+    }
+    if (account.status !== 'active'){
+      showLoginError('This account has been deactivated. Please contact the administrator.');
+      return;
+    }
+
+    credentials = {
+      username: account.username,
+      password: '',
+      role: String(account.role).toLowerCase(),
+      fullName: account.name
+    };
+    goToStep(5);
+  });
+
+  // Clear login errors on input
+  const usernameInputField = document.getElementById('user');
+  const passwordInputField = document.getElementById('pass');
+
+  usernameInputField.addEventListener('input', () => {
+    const field = usernameInputField.closest('.field');
+    field.classList.remove('has-error');
+    usernameInputField.classList.remove('invalid');
+  });
+
+  passwordInputField.addEventListener('input', () => {
+    const field = passwordInputField.closest('.field');
+    field.classList.remove('has-error');
+    passwordInputField.classList.remove('invalid');
+  });
+
+  // Counter card selection
+  const counterCards = document.querySelectorAll('.counter-card.available');
+  counterCards.forEach(card => {
+    card.addEventListener('click', () => {
+      const counterNum = card.dataset.counter;
+
+      // Simulate checking if the counter is still vacant (real implementation would query database)
+      const isVacant = true; // In production, verify against backend before allowing
+
+      if (isVacant) {
+        selectedCounter = counterNum;
+        console.log('Selected counter:', counterNum);
+        // Proceed to the Staff Portal view, only reachable once a vacant slot is confirmed
+        goToStep(5);
+      } else {
+        // Counter was just taken — block navigation and refresh availability instead
+        console.log('Counter', counterNum, 'is no longer available');
+        // TODO: Show error notification and refresh counter list from server
+      }
+    });
+  });
+
+  // Back button on counter selection screen
+  document.getElementById('backToLoginBtn').addEventListener('click', () => {
+    goToStep(0);
+  });
+
+  goToStep(0);
+
+  function togglePw(btn){
+    const input = btn.previousElementSibling;
+    const isPw = input.type === 'password';
+    input.type = isPw ? 'text' : 'password';
+    btn.setAttribute('aria-label', isPw ? 'Hide password' : 'Show password');
+    btn.innerHTML = isPw
+      ? '<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.94 10.94 0 0112 20C5 20 1 12 1 12a19.6 19.6 0 015.06-6.06M9.9 4.24A10.94 10.94 0 0112 4c7 0 11 8 11 8a19.6 19.6 0 01-2.16 3.19M14.12 14.12a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+      : '<svg viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+  }
+  // ===== STAFF PORTAL LOGIC =====
+
+  // ---------- Populate the Staff Portal from the in-memory staff context ----------
+  // Called every time goToStep(5) runs, since the same page/session carries
+  // the credentials + selectedCounter set earlier in the Staff Access flow.
+  const roleLabels = { registrar: 'Registrar Staff', cashier: 'Cashier Staff' };
+
+  function populateStaffPortal(){
+    const roleLabel = roleLabels[credentials.role] || '';
+    const displayName = credentials.fullName || credentials.username || 'Staff Member';
+
+    // Header subtitle: "Staff Management Dashboard — Counter 2 · Registrar Staff"
+    const hsubLine = document.getElementById('hsubLine');
+    const subParts = [];
+    if (selectedCounter) subParts.push('Counter ' + selectedCounter);
+    if (roleLabel) subParts.push(roleLabel);
+    hsubLine.textContent = subParts.length
+      ? 'Staff Management Dashboard — ' + subParts.join(' · ')
+      : 'Staff Management Dashboard';
+
+    // Profile dropdown identity block
+    document.getElementById('dropdownUserName').textContent = displayName;
+    document.getElementById('dropdownUserMeta').textContent = subParts.length
+      ? subParts.join(' · ')
+      : (credentials.username ? 'Signed in' : 'Not signed in');
+
+    // Show only the queue panel matching this staff member's role — not the other counter's
+    const regCol = document.getElementById('regCounterCol');
+    const cshCol = document.getElementById('cshCounterCol');
+    const queueSplit = document.getElementById('queueSplit');
+    if (credentials.role === 'registrar'){
+      if (regCol) regCol.classList.remove('hidden');
+      if (cshCol) cshCol.classList.add('hidden');
+    } else if (credentials.role === 'cashier'){
+      if (cshCol) cshCol.classList.remove('hidden');
+      if (regCol) regCol.classList.add('hidden');
+    } else {
+      // Role unknown (shouldn't normally happen) — fall back to showing both
+      if (regCol) regCol.classList.remove('hidden');
+      if (cshCol) cshCol.classList.remove('hidden');
+    }
+    if (queueSplit) queueSplit.style.gridTemplateColumns = '1fr';
+  }
+
+  // Log out — returns to the Staff Access login screen within the same page
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    selectedCounter = null;
+    goToStep(0);
+  });
+
+  // ---------- Queue Page ----------
+  // Mock state for the currently logged-in staff member's own counter only.
+  // Replace with live data scoped to this staff member's assignment from your backend/database.
+  const myCounter = {
+    label: 'Counter ' + (selectedCounter || 1),
+    closed: false,
+    transactionLimit: null,
+    serving: { ticket: 'F112', name: 'Marie' },
+    waiting: [
+      { ticket: 'R102', name: 'Janseph', waitMins: 22 },
+      { ticket: 'D103', name: 'Kharl Pascual', waitMins: 13 },
+    ],
+    onHold: [],
+    history: [],
+  };
+
+  let showingOnHold = false;
+
+  const counterTabsEl = document.getElementById('counterTabs');
+  const servingBodyEl = document.getElementById('servingBody');
+  const closeCounterBtn = document.getElementById('closeCounterBtn');
+  const waitingCountLabel = document.getElementById('waitingCountLabel');
+  const waitingListEl = document.getElementById('waitingList');
+  const callNextBtn = document.getElementById('callNextBtn');
+  const onHoldToggleBtn = document.getElementById('onHoldToggleBtn');
+  const onHoldCountEl = document.getElementById('onHoldCount');
+  const txnLimitBtn = document.getElementById('txnLimitBtn');
+  const historyTableBody = document.getElementById('historyTableBody');
+
+  // A single, non-interactive badge showing only this staff member's own counter —
+  // other counters are not visible or reachable from here.
+  function renderCounterTabs(){
+    counterTabsEl.innerHTML = '';
+    const badge = document.createElement('div');
+    badge.className = 'counter-tab qactive';
+    badge.textContent = myCounter.label;
+    counterTabsEl.appendChild(badge);
+  }
+
+  function renderServing(){
+    const c = myCounter;
+    closeCounterBtn.textContent = c.closed ? 'Reopen Counter' : 'Close Counter';
+    closeCounterBtn.classList.toggle('reopen', c.closed);
+
+    if (c.closed){
+      servingBodyEl.innerHTML = `<div class="serving-empty">This counter is currently closed.</div>`;
+      return;
+    }
+
+    if (c.serving){
+      servingBodyEl.innerHTML = `
+        <div class="serving-ticket-num">${c.serving.ticket}</div>
+        <div class="serving-name">${c.serving.name}</div>
+        <div class="serving-actions">
+          <button class="btn-hold" id="holdBtn" type="button">Hold</button>
+          <button class="btn-complete" id="completeBtn" type="button">Complete</button>
+        </div>
+      `;
+      document.getElementById('holdBtn').addEventListener('click', () => holdCurrent());
+      document.getElementById('completeBtn').addEventListener('click', () => completeCurrent());
+    } else {
+      servingBodyEl.innerHTML = `<div class="serving-empty">No customer being served. Call the next customer to begin.</div>`;
+    }
+  }
+
+  function renderWaiting(){
+    const c = myCounter;
+    const list = showingOnHold ? c.onHold : c.waiting;
+
+    waitingCountLabel.textContent = showingOnHold
+      ? c.onHold.length + ' on hold'
+      : c.waiting.length + ' customer' + (c.waiting.length === 1 ? '' : 's') + ' waiting';
+
+    onHoldCountEl.textContent = c.onHold.length;
+    onHoldToggleBtn.classList.toggle('qactive', showingOnHold);
+
+    if (list.length === 0){
+      waitingListEl.innerHTML = `<div class="waiting-list-empty">${showingOnHold ? 'No tickets on hold.' : 'No customers waiting.'}</div>`;
+    } else {
+      waitingListEl.innerHTML = list.map((item, i) => `
+        <div class="waiting-row-item">
+          <div class="waiting-pos">#${i + 1}</div>
+          <div class="waiting-item-info">
+            <div class="waiting-item-ticket">${item.ticket}</div>
+            <div class="waiting-item-name">${item.name}</div>
+          </div>
+          ${showingOnHold
+            ? `<button class="waiting-item-resume" data-ticket="${item.ticket}">Resume</button>`
+            : `<div class="waiting-item-time">${item.waitMins} mins</div>`
+          }
+        </div>
+      `).join('');
+
+      if (showingOnHold){
+        waitingListEl.querySelectorAll('.waiting-item-resume').forEach(btn => {
+          btn.addEventListener('click', () => resumeFromHold(btn.dataset.ticket));
+        });
+      }
+    }
+
+    const canCallNext = !c.closed && !c.serving && c.waiting.length > 0;
+    callNextBtn.disabled = !canCallNext;
+  }
+
+  function renderHistory(){
+    const c = myCounter;
+    if (c.history.length === 0){
+      historyTableBody.innerHTML = `
+        <tr class="history-empty-row"><td colspan="5">No completed or cancelled transactions yet today.</td></tr>
+        <tr class="history-empty-row"><td colspan="5">&nbsp;</td></tr>
+      `;
+      return;
+    }
+    historyTableBody.innerHTML = c.history.map(h => `
+      <tr>
+        <td>${h.ticket}</td>
+        <td>${h.name}</td>
+        <td>${h.type}</td>
+        <td><span class="history-status ${h.status}">${h.statusLabel}</span></td>
+        <td>${h.time}</td>
+      </tr>
+    `).join('');
+  }
+
+  function nowTimeLabel(){
+    const d = new Date();
+    return d.toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function holdCurrent(){
+    const c = myCounter;
+    if (!c.serving) return;
+    c.onHold.push({ ticket: c.serving.ticket, name: c.serving.name });
+    c.history.unshift({ ticket: c.serving.ticket, name: c.serving.name, type: 'Registrar', status: 'held', statusLabel: 'On Hold', time: nowTimeLabel() });
+    c.serving = null;
+    renderQueuePage();
+    // TODO: PATCH /api/queue/{ticket} { status: 'held' }
+  }
+
+  function completeCurrent(){
+    const c = myCounter;
+    if (!c.serving) return;
+    c.history.unshift({ ticket: c.serving.ticket, name: c.serving.name, type: 'Registrar', status: 'completed', statusLabel: 'Completed', time: nowTimeLabel() });
+    c.serving = null;
+    renderQueuePage();
+    // TODO: PATCH /api/queue/{ticket} { status: 'completed' }
+  }
+
+  function callNextCustomer(){
+    const c = myCounter;
+    if (c.closed || c.serving || c.waiting.length === 0) return;
+    c.serving = c.waiting.shift();
+    renderQueuePage();
+    // TODO: POST /api/queue/call-next { counter: myCounter.label }
+  }
+
+  function resumeFromHold(ticketNum){
+    const c = myCounter;
+    const idx = c.onHold.findIndex(t => t.ticket === ticketNum);
+    if (idx === -1) return;
+    const [item] = c.onHold.splice(idx, 1);
+    if (!c.serving){
+      c.serving = item;
+    } else {
+      c.waiting.unshift(item);
+    }
+    renderQueuePage();
+    // TODO: PATCH /api/queue/{ticket} { status: 'waiting' or 'serving' }
+  }
+
+  function renderQueuePage(){
+    renderCounterTabs();
+    renderServing();
+    renderWaiting();
+    renderHistory();
+  }
+
+  closeCounterBtn.addEventListener('click', () => {
+    myCounter.closed = !myCounter.closed;
+    renderQueuePage();
+    // TODO: PATCH /api/counters/{counter} { status: myCounter.closed ? 'closed' : 'open' }
+  });
+
+  callNextBtn.addEventListener('click', callNextCustomer);
+
+  onHoldToggleBtn.addEventListener('click', () => {
+    showingOnHold = !showingOnHold;
+    renderWaiting();
+  });
+
+  txnLimitBtn.addEventListener('click', () => {
+    const c = myCounter;
+    const input = window.prompt('Set transaction limit per customer for ' + c.label + ':', c.transactionLimit || '');
+    if (input === null) return;
+    const num = parseInt(input, 10);
+    if (!isNaN(num) && num > 0){
+      c.transactionLimit = num;
+      // TODO: PATCH /api/counters/{counter} { transactionLimit: num }
+    }
+  });
+
+  renderQueuePage();
+
+  // ---------- Tab switching ----------
+  const tabs = document.querySelectorAll('.tab');
+  const views = document.querySelectorAll('.view');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      views.forEach(v => v.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('view-' + tab.dataset.view).classList.add('active');
+    });
+  });
+
+  // ---------- Header dropdowns ----------
+  const profileBtn = document.getElementById('profileBtn');
+  const profileDropdown = document.getElementById('profileDropdown');
+  const menuBtn = document.getElementById('menuBtn');
+  const menuDropdown = document.getElementById('menuDropdown');
+
+  function toggleDropdown(btn, dropdown, e){
+    e.stopPropagation();
+    const willOpen = !dropdown.classList.contains('open');
+    profileDropdown.classList.remove('open');
+    menuDropdown.classList.remove('open');
+    if (willOpen) dropdown.classList.add('open');
+  }
+  profileBtn.addEventListener('click', (e) => toggleDropdown(profileBtn, profileDropdown, e));
+  menuBtn.addEventListener('click', (e) => toggleDropdown(menuBtn, menuDropdown, e));
+  document.addEventListener('click', () => {
+    profileDropdown.classList.remove('open');
+    menuDropdown.classList.remove('open');
+  });
+
+  // ---------- Calendar ----------
+  const calGrid = document.getElementById('calGrid');
+  const calTitle = document.getElementById('calTitle');
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+  let viewYear = 2026, viewMonth = 5; // June 2026 (0-indexed)
+  let selectedDate = { year: 2026, month: 5, day: 15 };
+  const today = new Date();
+
+  function renderCalendar(){
+    calTitle.textContent = monthNames[viewMonth] + ' ' + viewYear;
+    calGrid.innerHTML = '';
+    ['SUN','MON','TUE','WED','THUR','FRI','SAT'].forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-dow';
+      el.textContent = d;
+      calGrid.appendChild(el);
+    });
+
+    const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
+
+    // leading days from previous month
+    for (let i = firstDay - 1; i >= 0; i--){
+      const el = document.createElement('div');
+      el.className = 'cal-day muted';
+      el.textContent = prevMonthDays - i;
+      calGrid.appendChild(el);
+    }
+    // current month days
+    for (let d = 1; d <= daysInMonth; d++){
+      const el = document.createElement('div');
+      el.className = 'cal-day';
+      el.textContent = d;
+      const isToday = today.getFullYear() === viewYear && today.getMonth() === viewMonth && today.getDate() === d;
+      const isSelected = selectedDate.year === viewYear && selectedDate.month === viewMonth && selectedDate.day === d;
+      if (isToday) el.classList.add('today');
+      if (isSelected) el.classList.add('selected');
+      el.addEventListener('click', () => {
+        selectedDate = { year: viewYear, month: viewMonth, day: d };
+        renderCalendar();
+        // TODO: fetch queue/transaction data for selectedDate from backend
+      });
+      calGrid.appendChild(el);
+    }
+    // trailing days from next month to fill the grid
+    const totalCells = firstDay + daysInMonth;
+    const trailing = (7 - (totalCells % 7)) % 7;
+    for (let d = 1; d <= trailing; d++){
+      const el = document.createElement('div');
+      el.className = 'cal-day muted';
+      el.textContent = d;
+      calGrid.appendChild(el);
+    }
+  }
+
+  document.getElementById('calPrev').addEventListener('click', () => {
+    viewMonth--;
+    if (viewMonth < 0){ viewMonth = 11; viewYear--; }
+    renderCalendar();
+  });
+  document.getElementById('calNext').addEventListener('click', () => {
+    viewMonth++;
+    if (viewMonth > 11){ viewMonth = 0; viewYear++; }
+    renderCalendar();
+  });
+  renderCalendar();
+
+  // ---------- Bar charts ----------
+  function renderBarChart(containerId, data, peakKeys, wrapClass, valClass, barClass, xlabelClass){
+    wrapClass = wrapClass || 'bar-wrap';
+    valClass = valClass || 'bar-val';
+    barClass = barClass || 'bar';
+    xlabelClass = xlabelClass || 'bar-xlabel';
+    const container = document.getElementById(containerId);
+    const max = Math.max(...data.map(d => d.value));
+    container.innerHTML = '';
+    data.forEach(d => {
+      const wrap = document.createElement('div');
+      wrap.className = wrapClass;
+      const heightPct = Math.max(6, (d.value / max) * 100);
+      const isPeak = peakKeys.includes(d.label);
+      wrap.innerHTML = `
+        <div class="${valClass}">${d.value}</div>
+        <div class="${barClass}${isPeak ? ' peak' : ''}" style="height:${heightPct}%"></div>
+        <div class="${xlabelClass}">${d.label}</div>
+      `;
+      container.appendChild(wrap);
+    });
+  }
+
+  renderBarChart('hoursChart', [
+    { label:'8 AM', value:5 },
+    { label:'10 AM', value:8 },
+    { label:'1 PM', value:15 },
+    { label:'2 PM', value:13 },
+    { label:'3 PM', value:10 },
+  ], ['1 PM','2 PM']);
+
+  renderBarChart('seasonChart', [
+    { label:'JAN', value:20 },
+    { label:'MAR', value:80 },
+    { label:'MAY', value:178 },
+    { label:'JUL', value:160 },
+    { label:'SEP', value:120 },
+    { label:'NOV', value:60 },
+  ], ['MAY','JUL']);
+
+  // ---------- Mock real-time update hook ----------
+  // In production, replace this with a WebSocket or polling connection
+  // that pushes live counter/queue data from the backend database.
+  function updateDashboardData(data){
+    if (data.totalWaiting !== undefined) document.getElementById('statWaiting').textContent = data.totalWaiting;
+    if (data.currentlyServing !== undefined) document.getElementById('statServing').textContent = data.currentlyServing;
+    if (data.activeCounters !== undefined) document.getElementById('statCounters').innerHTML = data.activeCounters + '<small>/5</small>';
+    if (data.registrarTicket) document.getElementById('regTicket').textContent = data.registrarTicket;
+    if (data.registrarWaiting !== undefined) document.getElementById('regWaiting').textContent = data.registrarWaiting;
+    if (data.cashierTicket) document.getElementById('cshTicket').textContent = data.cashierTicket;
+    if (data.cashierWaiting !== undefined) document.getElementById('cshWaiting').textContent = data.cashierWaiting;
+  }
+  // Example: updateDashboardData({ totalWaiting: 7, registrarTicket: 'F113' });
+
+
+</script>
+
+</body>
+</html>
